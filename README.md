@@ -2,7 +2,7 @@
 
 Ask any GitHub repo from your browser. Enter a repository URL, and GitSandbox spins up a Cloudflare Sandbox with an AI coding agent (OpenCode or Pi) — all through an xterm.js terminal in the browser.
 
-<img width="1568" height="890" alt="image" src="[https://github.com/user-attachments/assets/ee59ebe5-8bf5-477a-b759-f3ea83ae9024](https://github.com/user-attachments/assets/ee59ebe5-8bf5-477a-b759-f3ea83ae9024)" />
+<img alt="image" src="https://github.com/aryankeluskar/gitsandbox/blob/master/public/banner.png?raw=true" />
 
 ## Architecture
 
