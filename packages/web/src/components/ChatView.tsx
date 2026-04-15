@@ -40,7 +40,7 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
       >
         <div className="mx-auto w-full max-w-3xl px-6 py-6">
           {isEmpty && (
-            <div className="flex min-h-[55vh] flex-col items-center justify-center text-center animate-fade-in">
+            <div className="flex min-h-[35vh] flex-col items-center justify-center text-center animate-fade-in">
               <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
                 <svg
                   width="36"
@@ -56,9 +56,8 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
               <h3 className="mb-2 text-xl font-semibold tracking-tight text-zinc-100">
                 {repoLabel}
               </h3>
-              <p className="max-w-sm text-[13.5px] leading-relaxed text-zinc-500">
-                Ask anything about this codebase. The agent reads files on-demand
-                from GitHub — no clone, no container, no wait.
+              <p className="max-w-md text-[13.5px] leading-relaxed text-zinc-500">
+                Ask anything about this codebase. The agent uses a custom VFS built on top of GitHub API to read files and answer questions.
               </p>
             </div>
           )}

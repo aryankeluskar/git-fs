@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { RepoInput } from "./components/RepoInput";
+import { BranchPicker } from "./components/BranchPicker";
 import { ChatView } from "./components/ChatView";
 import { SessionSidebar } from "./components/SessionSidebar";
 import { SettingsPanel } from "./components/SettingsPanel";
+import { Marquee } from "./components/Marquee";
 import { useAgent } from "./hooks/useAgent";
 import { extractRepoFromPath } from "./lib/urlRepo";
 
@@ -52,9 +54,8 @@ export default function App() {
 
       {/* Sidebar — always visible on md+, drawer on mobile */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col border-r border-zinc-800/60 bg-zinc-900/40 backdrop-blur transition-transform duration-300 ease-smooth md:static md:translate-x-0 ${
-          mobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-        }`}
+        className={`fixed inset-y-0 left-0 z-40 flex w-[260px] flex-col border-r border-zinc-800/60 bg-zinc-900/40 backdrop-blur transition-transform duration-300 ease-smooth md:static md:translate-x-0 ${mobileSidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+          }`}
       >
         <div className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800/60 px-4">
           <a
@@ -84,8 +85,8 @@ export default function App() {
 
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 shrink-0 items-center justify-between border-b border-zinc-800/60 bg-zinc-950/80 px-4 backdrop-blur">
-          <div className="flex items-center gap-3">
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-800/60 bg-zinc-950/80 px-4 backdrop-blur">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
             <button
               onClick={() => setMobileSidebarOpen(true)}
               className="press focus-ring grid h-9 w-9 place-items-center rounded-md text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-200 md:hidden"
@@ -103,12 +104,12 @@ export default function App() {
               />
             ) : (
               <span className="text-[14px] font-medium tracking-tight text-zinc-400">
-                Start a new session
+                {/* Start a new session */}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <a
               href="https://github.com/aryankeluskar/gitsandbox"
               target="_blank"
@@ -120,7 +121,7 @@ export default function App() {
                 <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
               </svg>
             </a>
-            <button
+            {/* <button
               onClick={() => setSettingsOpen(true)}
               className="press focus-ring grid h-9 w-9 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-800/60 hover:text-zinc-200"
               title="Settings"
@@ -133,7 +134,7 @@ export default function App() {
                 />
                 <circle cx="8" cy="8" r="2" stroke="currentColor" strokeWidth="1.1" />
               </svg>
-            </button>
+            </button> */}
           </div>
         </header>
 
@@ -165,25 +166,25 @@ function RepoBreadcrumb({
 }) {
   const githubUrl = `https://github.com/${owner}/${repo}`;
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex min-w-0 flex-1 items-center gap-2">
       <img
         src={`https://github.com/${owner}.png?size=32`}
         alt=""
-        className="h-6 w-6 rounded-md bg-zinc-800 ring-1 ring-zinc-800"
+        className="h-6 w-6 shrink-0 rounded-md bg-zinc-800 ring-1 ring-zinc-800"
       />
-      <a
-        href={githubUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center gap-1 text-[13.5px] text-zinc-200 transition hover:text-white"
-      >
-        <span className="text-zinc-500">{owner}</span>
-        <span className="text-zinc-600">/</span>
-        <span className="font-medium">{repo}</span>
-      </a>
-      <span className="rounded-md border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 font-mono text-[10.5px] text-zinc-400">
-        {branch}
-      </span>
+      <Marquee className="text-[13.5px]">
+        <a
+          href={githubUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-zinc-200 transition hover:text-white"
+        >
+          <span className="text-zinc-500">{owner}</span>
+          <span className="text-zinc-600">/</span>
+          <span className="font-medium">{repo}</span>
+        </a>
+      </Marquee>
+      <BranchPicker owner={owner} repo={repo} branch={branch} />
     </div>
   );
 }
@@ -194,9 +195,9 @@ function HomePage() {
       <div className="animate-fade-in w-full max-w-xl">
         <div className="mb-10 text-center">
           <h2 className="mb-3 text-3xl font-semibold tracking-tight text-zinc-50">
-            <span className="text-emerald-400">git</span>sandbox
+            <span className="text-emerald-400 mr-1">git</span>sandbox
           </h2>
-          <p className="mx-auto max-w-sm text-[14px] leading-relaxed text-zinc-400">
+          <p className="mx-auto max-w-md text-[14px] leading-relaxed text-zinc-400">
             Replace{" "}
             <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-[13px] text-zinc-300">
               github.com
@@ -205,7 +206,7 @@ function HomePage() {
             <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-[13px] text-emerald-400">
               github.soy.run
             </code>{" "}
-            in any GitHub URL. Instant AI chat — no clone, no wait.
+            in any GitHub URL. Use your Claude / Codex / Copilot sub to instantly chat with the repo in your browser.
           </p>
         </div>
 
@@ -265,7 +266,7 @@ function HomePage() {
           >
             just-bash
           </a>
-          . Bring your own Anthropic / OpenAI key — stays in your browser.
+          {/* . Bring your own Anthropic / OpenAI key — stays in your browser. */}
         </p>
       </div>
     </div>

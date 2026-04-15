@@ -42,10 +42,24 @@ export function parseRepoUrl(input: string): ParsedRepo {
 
 export function buildTarballUrl(
   parsed: ParsedRepo,
-  hasToken: boolean
+  hasToken: boolean,
+  ref?: string
 ): string {
+  const refToUse = ref ?? parsed.branch;
   if (hasToken) {
-    return `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/tarball/${parsed.branch}`;
+    return `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/tarball/${refToUse}`;
   }
-  return `https://github.com/${parsed.owner}/${parsed.repo}/archive/refs/heads/${parsed.branch}.tar.gz`;
+  return `https://codeload.github.com/${parsed.owner}/${parsed.repo}/tar.gz/refs/heads/${refToUse}`;
+}
+
+export function buildTarballCandidates(
+  parsed: ParsedRepo,
+  hasToken: boolean,
+  explicitBranch: boolean
+): string[] {
+  if (explicitBranch) {
+    return [buildTarballUrl(parsed, hasToken)];
+  }
+  const refs = [parsed.branch, parsed.branch === "main" ? "master" : "main"];
+  return refs.map((ref) => buildTarballUrl(parsed, hasToken, ref));
 }

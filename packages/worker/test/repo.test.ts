@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { parseRepoUrl, buildTarballUrl, InvalidRepoUrlError } from "../src/repo";
+import {
+  parseRepoUrl,
+  buildTarballUrl,
+  buildTarballCandidates,
+  InvalidRepoUrlError,
+} from "../src/repo";
 
 describe("parseRepoUrl", () => {
   it("parses full GitHub URL", () => {
@@ -48,13 +53,13 @@ describe("parseRepoUrl", () => {
 });
 
 describe("buildTarballUrl", () => {
-  it("builds public URL without token", () => {
+  it("builds codeload URL without token", () => {
     const url = buildTarballUrl(
       { owner: "expressjs", repo: "express", branch: "main" },
       false
     );
     expect(url).toBe(
-      "https://github.com/expressjs/express/archive/refs/heads/main.tar.gz"
+      "https://codeload.github.com/expressjs/express/tar.gz/refs/heads/main"
     );
   });
 
@@ -66,5 +71,53 @@ describe("buildTarballUrl", () => {
     expect(url).toBe(
       "https://api.github.com/repos/expressjs/express/tarball/main"
     );
+  });
+
+  it("builds URL with explicit ref override", () => {
+    const url = buildTarballUrl(
+      { owner: "a", repo: "b", branch: "main" },
+      false,
+      "master"
+    );
+    expect(url).toBe(
+      "https://codeload.github.com/a/b/tar.gz/refs/heads/master"
+    );
+  });
+});
+
+describe("buildTarballCandidates", () => {
+  it("returns main then master when branch is default", () => {
+    const urls = buildTarballCandidates(
+      { owner: "a", repo: "b", branch: "main" },
+      false,
+      false
+    );
+    expect(urls).toEqual([
+      "https://codeload.github.com/a/b/tar.gz/refs/heads/main",
+      "https://codeload.github.com/a/b/tar.gz/refs/heads/master",
+    ]);
+  });
+
+  it("returns only explicit branch when user provided one", () => {
+    const urls = buildTarballCandidates(
+      { owner: "a", repo: "b", branch: "dev" },
+      false,
+      true
+    );
+    expect(urls).toEqual([
+      "https://codeload.github.com/a/b/tar.gz/refs/heads/dev",
+    ]);
+  });
+
+  it("uses api.github.com when token is available", () => {
+    const urls = buildTarballCandidates(
+      { owner: "a", repo: "b", branch: "main" },
+      true,
+      false
+    );
+    expect(urls).toEqual([
+      "https://api.github.com/repos/a/b/tarball/main",
+      "https://api.github.com/repos/a/b/tarball/master",
+    ]);
   });
 });

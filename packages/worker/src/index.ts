@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import type { Env, CreateSandboxBody, DestroySandboxBody } from "./types";
 import { createSandbox, destroySandbox, proxyToOpenCode } from "./sandbox";
@@ -9,22 +8,132 @@ export { Sandbox } from "@cloudflare/sandbox";
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use(
-  "*",
-  cors({
-    origin: [
-      "https://github.soy.run",
-      "https://gitsandbox-web.pages.dev",
-      "http://localhost:3000",
-    ],
-    allowMethods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Accept", "Cache-Control", "Last-Event-ID"],
-    exposeHeaders: ["Content-Type"],
-  })
-);
+function allowedOrigin(origin: string | null): string {
+  if (!origin) return "";
+  if (origin === "https://github.soy.run") return origin;
+  if (origin === "http://localhost:3000") return origin;
+  if (/^https:\/\/[a-z0-9-]+\.gitsandbox-web\.pages\.dev$/.test(origin)) return origin;
+  if (origin === "https://gitsandbox-web.pages.dev") return origin;
+  return "";
+}
+
+app.use("*", async (c, next) => {
+  const origin = allowedOrigin(c.req.header("Origin") ?? null);
+  if (c.req.method === "OPTIONS") {
+    const reqHeaders = c.req.header("Access-Control-Request-Headers") ?? "*";
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Methods": "GET,POST,PATCH,DELETE,OPTIONS",
+        "Access-Control-Allow-Headers": reqHeaders,
+        "Access-Control-Max-Age": "86400",
+        "Vary": "Origin, Access-Control-Request-Headers",
+      },
+    });
+  }
+  await next();
+  if (origin) {
+    c.res.headers.set("Access-Control-Allow-Origin", origin);
+    c.res.headers.append("Vary", "Origin");
+  }
+});
 app.use("*", logger());
 
 app.get("/health", (c) => c.json({ ok: true, ts: Date.now() }));
+
+app.all("/oauth/gh/*", async (c) => {
+  const prefix = "/oauth/gh";
+  const rest = c.req.path.slice(prefix.length) || "/";
+  const search = new URL(c.req.url).search;
+
+  let target: string;
+  if (rest.startsWith("/login/")) {
+    target = `https://github.com${rest}${search}`;
+  } else if (rest.startsWith("/copilot_internal/")) {
+    target = `https://api.github.com${rest}${search}`;
+  } else if (rest.startsWith("/enterprise/")) {
+    const m = rest.match(/^\/enterprise\/([^/]+)(\/.*)$/);
+    if (!m) return c.json({ error: "bad enterprise path" }, 400);
+    const [, domain, sub] = m;
+    if (sub.startsWith("/copilot_internal/")) {
+      target = `https://api.${domain}${sub}${search}`;
+    } else {
+      target = `https://${domain}${sub}${search}`;
+    }
+  } else {
+    return c.json({ error: "not found" }, 404);
+  }
+
+  const headers = new Headers(c.req.raw.headers);
+  headers.delete("host");
+  headers.delete("origin");
+  headers.delete("referer");
+  headers.delete("cookie");
+  headers.set("User-Agent", "GitHubCopilotChat/0.35.0");
+  if (rest.startsWith("/copilot_internal/") || rest.includes("/copilot_internal/")) {
+    headers.set("Editor-Version", "vscode/1.107.0");
+    headers.set("Editor-Plugin-Version", "copilot-chat/0.35.0");
+    headers.set("Copilot-Integration-Id", "vscode-chat");
+  }
+
+  const init: RequestInit = {
+    method: c.req.method,
+    headers,
+    body:
+      c.req.method === "GET" || c.req.method === "HEAD"
+        ? undefined
+        : c.req.raw.body,
+  };
+
+  const upstream = await fetch(target, init);
+  const respHeaders = new Headers(upstream.headers);
+  respHeaders.delete("set-cookie");
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: respHeaders,
+  });
+});
+
+app.all("/copilot-api/:host/*", async (c) => {
+  const host = c.req.param("host");
+  if (!/^[a-z0-9.-]+\.githubcopilot\.com$/i.test(host) && !/^copilot-api\.[a-z0-9.-]+$/i.test(host)) {
+    return c.json({ error: "host not allowed" }, 400);
+  }
+  const prefix = `/copilot-api/${host}`;
+  const rest = c.req.path.slice(prefix.length) || "/";
+  const search = new URL(c.req.url).search;
+  const target = `https://${host}${rest}${search}`;
+
+  const headers = new Headers(c.req.raw.headers);
+  headers.delete("host");
+  headers.delete("origin");
+  headers.delete("referer");
+  headers.delete("cookie");
+  headers.set("User-Agent", "GitHubCopilotChat/0.35.0");
+  headers.set("Editor-Version", "vscode/1.107.0");
+  headers.set("Editor-Plugin-Version", "copilot-chat/0.35.0");
+  headers.set("Copilot-Integration-Id", "vscode-chat");
+
+  const init: RequestInit = {
+    method: c.req.method,
+    headers,
+    body:
+      c.req.method === "GET" || c.req.method === "HEAD"
+        ? undefined
+        : c.req.raw.body,
+  };
+
+  const upstream = await fetch(target, init);
+  const respHeaders = new Headers(upstream.headers);
+  respHeaders.delete("set-cookie");
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: respHeaders,
+  });
+});
 
 app.post("/sandbox/create", async (c) => {
   const body = await c.req.json<CreateSandboxBody>();
@@ -50,6 +159,30 @@ app.post("/sandbox/create", async (c) => {
       { error: err instanceof Error ? err.message : "Internal error" },
       500
     );
+  }
+});
+
+app.get("/sandbox/:id/diag", async (c) => {
+  const sandboxId = c.req.param("id");
+  const { getSandbox } = await import("@cloudflare/sandbox");
+  const sandbox = getSandbox(c.env.Sandbox, sandboxId, { normalizeId: true });
+  try {
+    const ps = await sandbox.exec("ps aux | grep -E 'opencode|node' | grep -v grep");
+    const ports = await sandbox.exec("ss -tlnp 2>/dev/null || netstat -tlnp 2>/dev/null || true");
+    const workspace = await sandbox.exec("ls -la /workspace/ 2>&1");
+    let ocLog = "";
+    try {
+      const l = await sandbox.exec("find /tmp /var/log -name '*.log' 2>/dev/null | head -5 | xargs -I{} sh -c 'echo === {} ===; tail -30 {}' 2>&1");
+      ocLog = l.stdout + l.stderr;
+    } catch {}
+    return c.json({
+      ps: ps.stdout + ps.stderr,
+      ports: ports.stdout + ports.stderr,
+      workspace: workspace.stdout + workspace.stderr,
+      ocLog,
+    });
+  } catch (err) {
+    return c.json({ error: err instanceof Error ? err.message : String(err) }, 500);
   }
 });
 

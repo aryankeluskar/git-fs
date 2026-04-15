@@ -1,6 +1,6 @@
 import { getSandbox } from "@cloudflare/sandbox";
 import type { Env, SandboxMeta } from "./types";
-import { parseRepoUrl, buildTarballUrl } from "./repo";
+import { parseRepoUrl, buildTarballCandidates } from "./repo";
 
 const OPENCODE_PORT = 4096;
 
@@ -8,18 +8,59 @@ function makeSandboxId(): string {
   return crypto.randomUUID();
 }
 
-function buildCloneScript(
-  tarUrl: string,
+function buildBootScript(
+  tarUrls: string[],
+  owner: string,
   repoName: string,
-  githubToken?: string
+  port: number,
+  githubToken?: string,
+  envExports = ""
 ): string {
   const header = githubToken
     ? `-H "Authorization: token ${githubToken}"`
     : "";
-  return [
-    `mkdir -p /workspace/${repoName}`,
-    `curl -sL ${header} "${tarUrl}" | tar xz --strip-components=1 -C /workspace/${repoName}`,
-  ].join(" && ");
+  const dir = `/workspace/${repoName}`;
+  const tmp = `/tmp/${repoName}.tar.gz`;
+
+  const urlCalls = tarUrls
+    .map((u) => `try_url "${u}" && cloned=1`)
+    .join("\n");
+
+  return `set +e
+exec >/tmp/boot.log 2>&1
+echo "[boot] $(date -u +%FT%TZ) starting"
+${envExports}
+mkdir -p ${dir}
+try_url() {
+  local url="$1"
+  echo "[clone] trying $url"
+  local code
+  code=$(curl -sL -o ${tmp} -w "%{http_code}" ${header} "$url")
+  if [ "$code" = "200" ] && gzip -t ${tmp} 2>/dev/null; then
+    tar xzf ${tmp} --strip-components=1 -C ${dir}
+    rm -f ${tmp}
+    return 0
+  fi
+  echo "[clone]   HTTP $code, not a valid gzip archive" >&2
+  return 1
+}
+cloned=0
+${urlCalls}
+if [ "$cloned" != "1" ]; then
+  echo "[clone] resolving default branch"
+  default_branch=$(curl -sL ${header} "https://api.github.com/repos/${owner}/${repoName}" | grep -o '"default_branch"[[:space:]]*:[[:space:]]*"[^"]*"' | sed 's/.*"\\([^"]*\\)"$/\\1/')
+  if [ -n "$default_branch" ]; then
+    try_url "https://codeload.github.com/${owner}/${repoName}/tar.gz/refs/heads/$default_branch" && cloned=1
+  fi
+fi
+if [ "$cloned" != "1" ]; then
+  echo "[clone] all tarball URLs failed" >&2
+  exit 1
+fi
+echo "[serve] starting opencode on :${port}"
+cd ${dir}
+exec opencode serve --print-logs --port ${port} --hostname 0.0.0.0
+`;
 }
 
 export async function createSandbox(
@@ -35,39 +76,29 @@ export async function createSandbox(
   const sandbox = getSandbox(env.Sandbox, sandboxId, { normalizeId: true });
 
   const githubToken = userEnv.GITHUB_TOKEN;
-  const tarUrl = buildTarballUrl(
+  const explicitBranch = branch !== undefined || parsed.branch !== "main";
+  const tarUrls = buildTarballCandidates(
     { ...parsed, branch: resolvedBranch },
-    Boolean(githubToken)
+    Boolean(githubToken),
+    explicitBranch
   );
-
-  const cloneScript = buildCloneScript(tarUrl, parsed.repo, githubToken);
-  const cloneResult = await sandbox.exec(cloneScript);
-  if (!cloneResult.success) {
-    await sandbox.destroy();
-    throw new Error(
-      `Failed to clone repository: ${cloneResult.stderr || cloneResult.stdout}`
-    );
-  }
 
   const envExports = Object.entries(userEnv)
     .filter(([key]) => key !== "GITHUB_TOKEN")
     .map(([key, value]) => `export ${key}='${value.replace(/'/g, "'\\''")}'`)
-    .join(" && ");
+    .join("\n");
 
-  if (envExports) {
-    await sandbox.exec(
-      `echo '${envExports.replace(/'/g, "'\\''")}' >> /root/.bashrc`
-    );
-  }
-
-  const proc = await sandbox.startProcess(
-    `cd /workspace/${parsed.repo} && opencode serve --port ${OPENCODE_PORT} --hostname 0.0.0.0`
+  const bootScript = buildBootScript(
+    tarUrls,
+    parsed.owner,
+    parsed.repo,
+    OPENCODE_PORT,
+    githubToken,
+    envExports
   );
-
-  await proc.waitForPort(OPENCODE_PORT, {
-    mode: "http",
-    path: "/global/health",
-  });
+  const scriptPath = `/tmp/boot-${sandboxId}.sh`;
+  await sandbox.writeFile(scriptPath, bootScript);
+  await sandbox.startProcess(`bash ${scriptPath}`);
 
   return {
     sandboxId,
