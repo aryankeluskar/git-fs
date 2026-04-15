@@ -1,7 +1,9 @@
 import { db, type Session } from "./index";
 
 export async function createSession(
-  fields: Pick<Session, "repoUrl" | "agent" | "sandboxId">
+  fields: Pick<Session, "repoUrl" | "agent" | "sandboxId"> & {
+    provider: string;
+  }
 ): Promise<Session> {
   const now = new Date();
   const id = await db.sessions.add({

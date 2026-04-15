@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ChatMessage } from "./ChatMessage";
 import { ChatComposer } from "./ChatComposer";
+import { ModelProviderPicker } from "./ModelProviderPicker";
 import { StatusShimmer } from "./Shimmer";
 import { AuthPrompt } from "./AuthPrompt";
 import type { UseAgentReturn } from "../hooks/useAgent";
@@ -20,6 +21,10 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
     abort,
     refreshProviders,
     ready,
+    activeModel,
+    selectModel,
+    logoutProvider,
+    connectedProviders,
   } = agent;
 
   useEffect(() => {
@@ -97,6 +102,16 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
       </div>
 
       <ChatComposer
+        leadingControl={
+          <ModelProviderPicker
+            activeModel={activeModel}
+            connectedProviders={connectedProviders}
+            onSelectModel={selectModel}
+            onLogout={logoutProvider}
+            onAuthSuccess={refreshProviders}
+            locked={!ready}
+          />
+        }
         onSend={sendMessage}
         onAbort={abort}
         status={status}

@@ -4,6 +4,8 @@ export interface Session {
   id?: number;
   repoUrl: string;
   agent: string;
+  /** LLM provider (e.g. anthropic, openai, github-copilot). */
+  provider?: string;
   sandboxId: string;
   createdAt: Date;
   lastActiveAt: Date;
@@ -47,6 +49,14 @@ export const db = new Dexie("gitsandbox") as Dexie & {
 
 db.version(1).stores({
   sessions: "++id, repoUrl, agent, createdAt, lastActiveAt",
+  messages: "++id, sessionId, role, timestamp",
+  settings: "key",
+  credentials: "key",
+  usage: "++id, sessionId, provider, model, timestamp",
+});
+
+db.version(2).stores({
+  sessions: "++id, repoUrl, agent, provider, createdAt, lastActiveAt",
   messages: "++id, sessionId, role, timestamp",
   settings: "key",
   credentials: "key",

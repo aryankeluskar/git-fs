@@ -97,9 +97,13 @@ function SubscriptionSignIn({ onAuthenticated }: AuthPromptProps) {
   );
 }
 
-function CodexSignIn({ onAuthenticated }: AuthPromptProps) {
+export function CodexSignIn({
+  onAuthenticated,
+  autoStart = false,
+}: AuthPromptProps & { autoStart?: boolean }) {
   const [stage, setStage] = useState<"idle" | "loading" | "done" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+  const startedRef = useRef(false);
 
   async function startLogin() {
     setError(null);
@@ -114,6 +118,14 @@ function CodexSignIn({ onAuthenticated }: AuthPromptProps) {
       setStage("error");
     }
   }
+
+  useEffect(() => {
+    if (autoStart && !startedRef.current) {
+      startedRef.current = true;
+      startLogin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div>
@@ -139,15 +151,27 @@ function CodexSignIn({ onAuthenticated }: AuthPromptProps) {
   );
 }
 
-function CopilotSignIn({ onAuthenticated }: AuthPromptProps) {
+export function CopilotSignIn({
+  onAuthenticated,
+  autoStart = false,
+}: AuthPromptProps & { autoStart?: boolean }) {
   const [stage, setStage] = useState<CopilotStage>("idle");
   const [userCode, setUserCode] = useState<string>("");
   const [verificationUri, setVerificationUri] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const startedRef = useRef(false);
 
   useEffect(() => {
     return () => abortRef.current?.abort();
+  }, []);
+
+  useEffect(() => {
+    if (autoStart && !startedRef.current) {
+      startedRef.current = true;
+      startLogin();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function startLogin() {
@@ -254,7 +278,7 @@ function CopilotSignIn({ onAuthenticated }: AuthPromptProps) {
   );
 }
 
-function ApiKeyForm({ onAuthenticated }: AuthPromptProps) {
+export function ApiKeyForm({ onAuthenticated }: AuthPromptProps) {
   const [selected, setSelected] = useState<Provider>("anthropic");
   const [apiKey, setApiKey] = useState("");
   const [submitting, setSubmitting] = useState(false);

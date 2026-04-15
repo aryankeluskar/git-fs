@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, type ReactNode } from "react";
 import type { ChatStatus } from "../hooks/useAgent";
 
 interface ChatComposerProps {
@@ -6,9 +6,17 @@ interface ChatComposerProps {
   onAbort: () => void;
   status: ChatStatus;
   disabled?: boolean;
+  /** Shown inside the input shell on the left (e.g. model / provider picker). */
+  leadingControl?: ReactNode;
 }
 
-export function ChatComposer({ onSend, onAbort, status, disabled }: ChatComposerProps) {
+export function ChatComposer({
+  onSend,
+  onAbort,
+  status,
+  disabled,
+  leadingControl,
+}: ChatComposerProps) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isStreaming = status === "streaming" || status === "loading";
@@ -49,30 +57,36 @@ export function ChatComposer({ onSend, onAbort, status, disabled }: ChatComposer
     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
   }, []);
 
+  const inputRadius = leadingControl
+    ? "rounded-none rounded-br-[20px] rounded-tr-[20px]"
+    : "rounded-[20px]";
+
   return (
     <div className="border-t border-zinc-800/60 bg-zinc-950/90 backdrop-blur-md px-4 py-4">
-      <div className="mx-auto flex max-w-3xl items-end gap-2">
-        <div className="relative flex-1 rounded-[20px] bg-zinc-900/70 shadow-soft shadow-inset-hair ring-1 ring-zinc-800 transition-[box-shadow,border-color] duration-200 focus-within:ring-emerald-600/40">
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              handleInput();
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder="What would you like to know?"
-            disabled={disabled}
-            rows={1}
-            className="w-full resize-none rounded-[20px] bg-transparent px-4 py-3 pr-14 text-[14.5px] leading-relaxed text-zinc-100 placeholder-zinc-600 outline-none disabled:opacity-40"
-          />
-          <button
-            onClick={handleSubmit}
-            disabled={disabled || (!text.trim() && !isStreaming)}
-            className="press focus-ring absolute bottom-2 right-2 grid h-9 w-9 place-items-center rounded-xl bg-zinc-800 text-zinc-200 hover:bg-emerald-600 hover:text-white disabled:opacity-30 disabled:hover:bg-zinc-800 disabled:hover:text-zinc-200"
-            aria-label={isStreaming ? "Stop" : "Send"}
-          >
-            <span className="relative block h-[18px] w-[18px]">
+      <div className="mx-auto flex max-w-3xl items-stretch gap-2">
+        <div className="flex min-h-[52px] flex-1 rounded-[20px] bg-zinc-900/70 shadow-soft shadow-inset-hair ring-1 ring-zinc-800 transition-shadow duration-200 ease-[cubic-bezier(0.2,0,0,1)] focus-within:ring-emerald-600/40">
+          {leadingControl}
+          <div className="relative min-w-0 flex-1">
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => {
+                setText(e.target.value);
+                handleInput();
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="What would you like to know?"
+              disabled={disabled}
+              rows={1}
+              className={`w-full resize-none bg-transparent px-4 py-3 pr-14 text-[14.5px] leading-relaxed text-zinc-100 placeholder-zinc-600 outline-none disabled:opacity-40 ${inputRadius}`}
+            />
+            <button
+              onClick={handleSubmit}
+              disabled={disabled || (!text.trim() && !isStreaming)}
+              className="press focus-ring absolute bottom-2 right-2 grid h-9 w-9 place-items-center rounded-[14px] bg-zinc-800 text-zinc-200 transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)] hover:bg-emerald-600 hover:text-white disabled:opacity-30 disabled:hover:bg-zinc-800 disabled:hover:text-zinc-200"
+              aria-label={isStreaming ? "Stop" : "Send"}
+            >
+              <span className="relative block h-[18px] w-[18px]">
               <span
                 className="absolute inset-0 grid place-items-center transition-[opacity,transform,filter] duration-300"
                 style={{
@@ -105,8 +119,9 @@ export function ChatComposer({ onSend, onAbort, status, disabled }: ChatComposer
                   <rect x="3" y="3" width="10" height="10" rx="1.5" />
                 </svg>
               </span>
-            </span>
-          </button>
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 

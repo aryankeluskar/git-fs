@@ -36,8 +36,6 @@ export interface SupportedModel {
 
 export const SUPPORTED_MODELS: SupportedModel[] = [
   // GitHub Copilot (subscription)
-  { provider: "github-copilot", modelId: "claude-sonnet-4.6", label: "Copilot · Claude Sonnet 4.6" },
-  { provider: "github-copilot", modelId: "claude-sonnet-4.5", label: "Copilot · Claude Sonnet 4.5" },
   { provider: "github-copilot", modelId: "claude-haiku-4.5", label: "Copilot · Claude Haiku 4.5" },
   { provider: "github-copilot", modelId: "gpt-5.4", label: "Copilot · GPT-5.4" },
   { provider: "github-copilot", modelId: "gpt-5-mini", label: "Copilot · GPT-5 Mini" },
@@ -158,6 +156,7 @@ export interface BuildAgentOptions {
   getApiKey: (provider: string) => Promise<string | undefined>;
   modelOverrides?: { baseUrl?: string };
   sessionId?: string;
+  existingMessages?: AgentMessage[];
 }
 
 export function buildAgent(opts: BuildAgentOptions): Agent {
@@ -189,7 +188,7 @@ export function buildAgent(opts: BuildAgentOptions): Agent {
       ),
       model: resolvedModel,
       tools,
-      messages: [],
+      messages: opts.existingMessages ?? [],
       thinkingLevel: "off",
     },
   });

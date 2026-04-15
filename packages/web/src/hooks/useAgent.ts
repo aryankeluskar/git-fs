@@ -15,7 +15,8 @@ import {
   type SupportedModel,
 } from "../lib/agent";
 import { createRepoRuntime, type RepoRuntime } from "../lib/repoRuntime";
-import { getCredential, setCredential } from "../db/credentials";
+import { deleteCredential, getCredential, setCredential } from "../db/credentials";
+import { db } from "../db";
 import { createSession, touchSession } from "../db/sessions";
 import {
   ensureFreshCopilot,
@@ -100,6 +101,9 @@ export interface UseAgentReturn {
   bootStage: BootStage;
   error: string | null;
   connectedProviders: string[];
+  activeModel: SupportedModel;
+  selectModel: (model: SupportedModel) => Promise<void>;
+  logoutProvider: (provider: SupportedModel["provider"]) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
   abort: () => void;
   refreshProviders: () => Promise<void>;
@@ -283,6 +287,17 @@ async function pickModelForProviders(
   providers: string[]
 ): Promise<SupportedModel> {
   if (providers.length === 0) return currentModel;
+
+  if (providers.includes(currentModel.provider)) {
+    if (currentModel.provider === "github-copilot") {
+      const available = await getCopilotAvailableModels();
+      if (available.has(currentModel.modelId)) return currentModel;
+      const picked = await pickCopilotModel();
+      if (picked) return picked;
+    }
+    return currentModel;
+  }
+
   const preferred = bestProvider(providers);
   if (preferred === "github-copilot") {
     const picked = await pickCopilotModel();
@@ -295,12 +310,6 @@ async function pickModelForProviders(
       );
       if (match) return match;
     }
-  }
-  if (
-    providers.includes(currentModel.provider) &&
-    currentModel.provider === preferred
-  ) {
-    return currentModel;
   }
   const match = SUPPORTED_MODELS.find((m) => m.provider === preferred);
   return match ?? currentModel;
@@ -317,12 +326,22 @@ async function resolveModelOverrides(
   return { baseUrl: getCopilotBaseUrl(fresh.access, fresh.enterpriseUrl) };
 }
 
+const LOGOUT_CRED_KEY: Record<string, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  google: "GOOGLE_API_KEY",
+  openrouter: "OPENROUTER_API_KEY",
+  "github-copilot": "COPILOT_OAUTH",
+  "openai-codex": "CODEX_OAUTH",
+};
+
 export function useAgent(repo: RepoIdent | null): UseAgentReturn {
   const [status, setStatus] = useState<ChatStatus>("idle");
   const [bootStage, setBootStage] = useState<BootStage>("ready");
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<OcMessage[]>([]);
   const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
+  const [activeModel, setActiveModel] = useState<SupportedModel>(DEFAULT_MODEL);
   const [ready, setReady] = useState(false);
   const [sessionId, setSessionId] = useState<number | undefined>();
 
@@ -331,7 +350,8 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
   const modelRef = useRef<SupportedModel>(DEFAULT_MODEL);
   const providersRef = useRef<string[]>([]);
   const subscribedRef = useRef<Agent | null>(null);
-  const sessionIdRef = useRef<number | undefined>();
+  const sessionIdRef = useRef<number | undefined>(undefined);
+  const copilotBaseUrlRef = useRef<string | undefined>(undefined);
 
   const syncProviders = useCallback(async (): Promise<string[]> => {
     const list = await checkConnectedProviders();
@@ -366,27 +386,94 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
     });
   }, []);
 
-  const rebuildAgent = useCallback(async (): Promise<Agent | null> => {
+  const rebuildAgent = useCallback(async (opts?: { skipModelPick?: boolean }): Promise<Agent | null> => {
     const runtime = runtimeRef.current;
     if (!runtime) return null;
     const providers = providersRef.current;
-    modelRef.current = await pickModelForProviders(modelRef.current, providers);
+
+    if (!opts?.skipModelPick) {
+      modelRef.current = await pickModelForProviders(modelRef.current, providers);
+    }
+
     const modelOverrides = await resolveModelOverrides(modelRef.current);
+    copilotBaseUrlRef.current = modelOverrides?.baseUrl;
+
+    const sid = sessionIdRef.current;
+    if (sid !== undefined) {
+      db.sessions.update(sid, { provider: modelRef.current.provider }).catch(() => {});
+    }
+
+    const existingMessages = agentRef.current?.state?.messages ?? [];
+
     console.log("[gitsandbox] rebuildAgent", {
       providers,
       picked: modelRef.current,
       baseUrl: modelOverrides?.baseUrl,
+      carriedMessages: existingMessages.length,
     });
     const agent = buildAgent({
       runtime,
       model: modelRef.current,
       getApiKey: resolveApiKey,
       modelOverrides,
+      existingMessages,
     });
     agentRef.current = agent;
     subscribe(agent);
+    setActiveModel(modelRef.current);
     return agent;
   }, [subscribe]);
+
+  const selectModel = useCallback(
+    async (model: SupportedModel) => {
+      const runtime = runtimeRef.current;
+      if (!runtime || !ready) return;
+      const providers = await syncProviders();
+      if (!providers.includes(model.provider)) return;
+      modelRef.current = model;
+      setActiveModel(model);
+
+      const modelOverrides = await resolveModelOverrides(model);
+      copilotBaseUrlRef.current = modelOverrides?.baseUrl;
+
+      const sid = sessionIdRef.current;
+      if (sid !== undefined) {
+        db.sessions.update(sid, { provider: model.provider }).catch(() => {});
+      }
+
+      const existingMessages = agentRef.current?.state?.messages ?? [];
+
+      console.log("[gitsandbox] selectModel", {
+        picked: model,
+        baseUrl: modelOverrides?.baseUrl,
+        carriedMessages: existingMessages.length,
+      });
+      const agent = buildAgent({
+        runtime,
+        model,
+        getApiKey: resolveApiKey,
+        modelOverrides,
+        existingMessages,
+      });
+      agentRef.current = agent;
+      subscribe(agent);
+    },
+    [ready, subscribe, syncProviders]
+  );
+
+  const logoutProvider = useCallback(
+    async (provider: SupportedModel["provider"]) => {
+      const credKey = LOGOUT_CRED_KEY[provider];
+      if (credKey) await deleteCredential(credKey);
+      if (provider === "github-copilot") copilotAvailableCache = null;
+      const list = await syncProviders();
+      if (runtimeRef.current) {
+        await rebuildAgent();
+      }
+      setStatus(list.length === 0 ? "needs_auth" : "idle");
+    },
+    [rebuildAgent, syncProviders]
+  );
 
   const refreshProviders = useCallback(async () => {
     const list = await syncProviders();
@@ -424,16 +511,23 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
         runtimeRef.current = runtime;
         setBootStage("ready");
 
+        providersRef.current = providers;
+        modelRef.current = await pickModelForProviders(
+          modelRef.current,
+          providers
+        );
+
         const session = await createSession({
           repoUrl: `https://github.com/${repo!.owner}/${repo!.repo}`,
           agent: "gitsandbox",
+          provider: modelRef.current.provider,
           sandboxId: `${repo!.owner}/${repo!.repo}`,
         });
         if (cancelled) return;
         sessionIdRef.current = session.id;
         setSessionId(session.id);
 
-        await rebuildAgent();
+        await rebuildAgent({ skipModelPick: true });
         if (cancelled) return;
 
         setReady(true);
@@ -464,16 +558,17 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
       }
 
       let agent = agentRef.current;
-      const preferred = bestProvider(providers);
       const needsRebuild =
-        !agent ||
-        !providers.includes(modelRef.current.provider) ||
-        modelRef.current.provider !== preferred;
+        !agent || !providers.includes(modelRef.current.provider);
       if (needsRebuild) {
         agent = await rebuildAgent();
       } else if (modelRef.current.provider === "github-copilot") {
         const overrides = await resolveModelOverrides(modelRef.current);
-        if (overrides?.baseUrl) agent = await rebuildAgent();
+        const baseUrlChanged =
+          overrides?.baseUrl && overrides.baseUrl !== copilotBaseUrlRef.current;
+        if (baseUrlChanged) {
+          agent = await rebuildAgent({ skipModelPick: true });
+        }
       }
       if (!agent) {
         setError("Agent not ready");
@@ -509,6 +604,9 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
       bootStage,
       error,
       connectedProviders,
+      activeModel,
+      selectModel,
+      logoutProvider,
       sendMessage,
       abort,
       refreshProviders,
@@ -521,6 +619,9 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
       bootStage,
       error,
       connectedProviders,
+      activeModel,
+      selectModel,
+      logoutProvider,
       sendMessage,
       abort,
       refreshProviders,

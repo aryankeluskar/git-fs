@@ -84,8 +84,8 @@ export function SessionSidebar({
                     {repoLabel(s.repoUrl)}
                   </div>
                   <div className="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-600">
-                    <span className="rounded bg-zinc-800/80 px-1.5 py-0.5 font-mono text-[10px] uppercase">
-                      {s.agent}
+                    <span className="rounded bg-zinc-800/80 px-1.5 py-0.5 font-mono text-[10px] capitalize">
+                      {s.provider ?? s.agent}
                     </span>
                     <span className="tabular-nums">{timeAgo(s.lastActiveAt)}</span>
                   </div>
