@@ -101,6 +101,17 @@ export function SessionSidebar({
       </div>
 
       <div className="flex items-center justify-between gap-2 border-t border-zinc-800/60 p-3">
+        <p className="px-2 py-1.5 text-[13px] text-zinc-600">
+          Built with 💚 by{" "}
+          <a
+            href="https://aryankeluskar.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-500 underline-offset-2 transition hover:text-emerald-300 hover:underline"
+          >
+            Aryan
+          </a>
+        </p>
         <div className="flex items-center gap-1.5">
           <a
             href="https://github.com/aryankeluskar"
@@ -127,17 +138,6 @@ export function SessionSidebar({
             </svg>
           </a>
         </div>
-        <p className="px-2 py-1.5 text-[13px] text-zinc-600">
-          Built with 💚 by{" "}
-          <a
-            href="https://aryankeluskar.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-zinc-500 underline-offset-2 transition hover:text-emerald-300 hover:underline"
-          >
-            Aryan
-          </a>
-        </p>
       </div>
       
     </div>
