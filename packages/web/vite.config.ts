@@ -4,6 +4,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 export default defineConfig({
+  // Ensure generated asset URLs stay rooted at domain root.
+  base: "/",
   plugins: [
     react(),
     tailwindcss(),

@@ -1,1 +1,3 @@
+/:owner/assets/*  /assets/:splat  200
+/:owner/:repo/assets/*  /assets/:splat  200
 /*  /index.html  200
