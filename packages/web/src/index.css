@@ -302,7 +302,7 @@ img[data-no-outline="true"] {
 }
 
 .hero-glow {
-  background: radial-gradient(ellipse 50% 40% at 50% 30%, rgba(16, 185, 129, 0.1), transparent 70%);
+  background: none;
 }
 
 /* ---- Markdown body ---- */
