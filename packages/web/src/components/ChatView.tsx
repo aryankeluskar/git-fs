@@ -38,8 +38,8 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
   const showLoadingRepo = !ready && status === "loading";
   const isAccount = repoLabel.length > 0 && !repoLabel.includes("/");
   const loadingMessage = isAccount
-    ? "Indexing account repositories..."
-    : "Indexing repository...";
+    ? "Spinning up sandbox for this account..."
+    : "Spinning up sandbox for this repository...";
   const emptyDescription = isAccount
     ? "Ask anything about this account's repositories. The agent sees a manifest of all repos with metadata. To dive into a specific repo's source, open github.soy.run/" +
       repoLabel +

@@ -119,7 +119,7 @@ export function SessionSidebar({
   const hasSessions = (sessions?.length ?? 0) > 0;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <div className="p-3">
         <button
           onClick={onNewSession}
@@ -147,7 +147,7 @@ export function SessionSidebar({
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2 pb-2">
+      <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
         {hasSessions ? (
           <div className="flex flex-col gap-4">
             {GROUP_ORDER.map((group) => {
@@ -177,7 +177,7 @@ export function SessionSidebar({
         )}
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-zinc-800/60 p-3">
+      <div className="flex shrink-0 items-center justify-between gap-2 border-t border-zinc-800/60 p-3">
         <p className="px-2 py-1 text-[12px] text-zinc-600">
           Built with{" "}
           <span className="text-emerald-500">♥</span> by{" "}
