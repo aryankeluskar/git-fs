@@ -369,11 +369,11 @@ function HomePage() {
           {/* Hero */}
           <div className="mb-10 text-center">
             <h1 className="font-display text-5xl font-bold tracking-tight text-zinc-100 leading-none sm:text-6xl md:text-7xl">
-              <span className="text-emerald-400">git</span>
+              <span className="text-emerald-400 mr-2">git</span>
               <span>sandbox</span>
-              <span className="cursor-blink ml-1 -mb-1 bg-emerald-400 align-baseline" aria-hidden />
+              {/* <span className="cursor-blink ml-1 -mb-1 bg-emerald-400 align-baseline" aria-hidden /> */}
             </h1>
-            <p className="mx-auto mt-5 max-w-md text-[14px] leading-relaxed text-zinc-400">
+            <p className="mx-auto mt-10 max-w-lg text-[14px] leading-relaxed text-zinc-400">
               Replace{" "}
               <code className="rounded border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 font-mono text-[12.5px] text-zinc-300">
                 github.com
@@ -382,7 +382,7 @@ function HomePage() {
               <code className="rounded border border-emerald-900/60 bg-emerald-950/30 px-1.5 py-0.5 font-mono text-[12.5px] text-emerald-300">
                 github.soy.run
               </code>{" "}
-              on any GitHub URL. Chat with the repo using your Claude, Codex, or Copilot sub — straight from the browser.
+              on any GitHub URL. Use your Claude, Codex or Copilot sub to instantly chat with any repo in your browser.
             </p>
           </div>
 
