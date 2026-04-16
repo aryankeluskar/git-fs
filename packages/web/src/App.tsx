@@ -6,40 +6,54 @@ import { SessionSidebar } from "./components/SessionSidebar";
 import { SettingsPanel } from "./components/SettingsPanel";
 import { Marquee } from "./components/Marquee";
 import { useAgent } from "./hooks/useAgent";
-import { extractRepoFromPath } from "./lib/urlRepo";
+import { extractTargetFromPath } from "./lib/urlTarget";
 
 const SUGGESTED_REPOS = [
   { owner: "expressjs", repo: "express", label: "expressjs/express" },
   { owner: "denoland", repo: "deno", label: "denoland/deno" },
   { owner: "vercel", repo: "next.js", label: "vercel/next.js" },
   { owner: "anthropics", repo: "claude-code", label: "anthropics/claude-code" },
+  { owner: "openai", repo: "openai", label: "openai" },
+  { owner: "linus", repo: "torvalds", label: "torvalds" },
+  { owner: "karpathy", repo: "karpathy", label: "karpathy" },
+  { owner: "cloudflare", repo: "cloudflare", label: "cloudflare" },
 ];
 
 export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
-  const urlRepo = useMemo(
-    () => extractRepoFromPath(window.location.pathname),
+  const urlTarget = useMemo(
+    () => extractTargetFromPath(window.location.pathname),
     []
   );
 
-  const repoTarget = useMemo(
-    () =>
-      urlRepo
-        ? { owner: urlRepo.owner, repo: urlRepo.repo, branch: urlRepo.branch }
-        : null,
-    [urlRepo]
-  );
+  const agentTarget = useMemo(() => {
+    if (!urlTarget) return null;
+    if (urlTarget.kind === "account") {
+      return { kind: "account" as const, owner: urlTarget.owner };
+    }
+    return {
+      kind: "repo" as const,
+      owner: urlTarget.owner,
+      repo: urlTarget.repo,
+      branch: urlTarget.branch,
+    };
+  }, [urlTarget]);
 
-  const agent = useAgent(repoTarget);
+  const agent = useAgent(agentTarget);
 
   function handleNewSession() {
     window.history.pushState({}, "", "/");
     window.location.reload();
   }
 
-  const repoLabel = urlRepo ? `${urlRepo.owner}/${urlRepo.repo}` : "";
+  const repoLabel =
+    urlTarget?.kind === "repo"
+      ? `${urlTarget.owner}/${urlTarget.repo}`
+      : urlTarget?.kind === "account"
+        ? urlTarget.owner
+        : "";
 
   return (
     <div className="flex h-screen bg-zinc-950 text-zinc-100">
@@ -94,12 +108,14 @@ export default function App() {
                 <path d="M2 4h12M2 8h12M2 12h12" />
               </svg>
             </button>
-            {urlRepo ? (
+            {urlTarget?.kind === "repo" ? (
               <RepoBreadcrumb
-                owner={urlRepo.owner}
-                repo={urlRepo.repo}
-                branch={urlRepo.branch ?? "main"}
+                owner={urlTarget.owner}
+                repo={urlTarget.repo}
+                branch={urlTarget.branch ?? "main"}
               />
+            ) : urlTarget?.kind === "account" ? (
+              <AccountBreadcrumb owner={urlTarget.owner} />
             ) : (
               <span className="text-[14px] font-medium tracking-tight text-zinc-400">
                 {/* Start a new session */}
@@ -137,7 +153,7 @@ export default function App() {
         </header>
 
         <div className="flex min-h-0 flex-1">
-          {urlRepo ? (
+          {urlTarget ? (
             <ChatView agent={agent} repoLabel={repoLabel} />
           ) : (
             <HomePage />
@@ -187,6 +203,32 @@ function RepoBreadcrumb({
   );
 }
 
+function AccountBreadcrumb({ owner }: { owner: string }) {
+  const githubUrl = `https://github.com/${owner}`;
+  return (
+    <div className="flex min-w-0 flex-1 items-center gap-2">
+      <img
+        src={`https://github.com/${owner}.png?size=32`}
+        alt=""
+        className="h-6 w-6 shrink-0 rounded-md bg-zinc-800 ring-1 ring-zinc-800"
+      />
+      <Marquee className="text-[13.5px]">
+        <a
+          href={githubUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-zinc-200 transition hover:text-white"
+        >
+          <span className="font-medium">{owner}</span>
+          <span className="ml-1.5 rounded bg-zinc-800/80 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-zinc-400">
+            account
+          </span>
+        </a>
+      </Marquee>
+    </div>
+  );
+}
+
 function HomePage() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-6">
@@ -230,13 +272,13 @@ function HomePage() {
 
         <div className="mt-10">
           <p className="mb-3 text-center text-[11px] font-medium uppercase tracking-widest text-zinc-600">
-            Try a repo
+            Try a repo or account
           </p>
           <div className="stagger flex flex-wrap justify-center gap-2">
             {SUGGESTED_REPOS.map((r) => (
               <a
                 key={r.label}
-                href={`/${r.owner}/${r.repo}`}
+                href={`/${r.label}`}
                 className="press lift focus-ring rounded-lg border border-zinc-800 bg-zinc-900/40 px-3 py-1.5 text-[13px] text-zinc-400 shadow-inset-hair hover:border-zinc-700 hover:bg-zinc-900 hover:text-zinc-100"
               >
                 {r.label}

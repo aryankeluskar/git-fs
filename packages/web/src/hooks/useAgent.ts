@@ -14,7 +14,11 @@ import {
   SUPPORTED_MODELS,
   type SupportedModel,
 } from "../lib/agent";
-import { createRepoRuntime, type RepoRuntime } from "../lib/repoRuntime";
+import {
+  createRepoRuntime,
+  createAccountRuntime,
+  type RepoRuntime,
+} from "../lib/repoRuntime";
 import { deleteCredential, getCredential, setCredential } from "../db/credentials";
 import { db } from "../db";
 import { createSession, touchSession } from "../db/sessions";
@@ -229,11 +233,9 @@ function messagesToParts(messages: Message[]): OcMessage[] {
   return out;
 }
 
-interface RepoIdent {
-  owner: string;
-  repo: string;
-  branch?: string;
-}
+export type AgentTarget =
+  | { kind: "repo"; owner: string; repo: string; branch?: string }
+  | { kind: "account"; owner: string };
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   "github-copilot": 0,
@@ -335,7 +337,7 @@ const LOGOUT_CRED_KEY: Record<string, string> = {
   "openai-codex": "CODEX_OAUTH",
 };
 
-export function useAgent(repo: RepoIdent | null): UseAgentReturn {
+export function useAgent(target: AgentTarget | null): UseAgentReturn {
   const [status, setStatus] = useState<ChatStatus>("idle");
   const [bootStage, setBootStage] = useState<BootStage>("ready");
   const [error, setError] = useState<string | null>(null);
@@ -488,7 +490,7 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
 
   useEffect(() => {
     let cancelled = false;
-    if (!repo) return;
+    if (!target) return;
 
     async function boot() {
       setReady(false);
@@ -501,12 +503,18 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
         const providers = await syncProviders();
         if (cancelled) return;
 
-        const runtime = await createRepoRuntime({
-          owner: repo!.owner,
-          repo: repo!.repo,
-          ref: repo!.branch,
-          getToken: async () => await getCredential("GITHUB_TOKEN"),
-        });
+        const runtime =
+          target!.kind === "account"
+            ? await createAccountRuntime({
+                owner: target!.owner,
+                getToken: async () => await getCredential("GITHUB_TOKEN"),
+              })
+            : await createRepoRuntime({
+                owner: target!.owner,
+                repo: target!.repo,
+                ref: target!.branch,
+                getToken: async () => await getCredential("GITHUB_TOKEN"),
+              });
         if (cancelled) return;
         runtimeRef.current = runtime;
         setBootStage("ready");
@@ -517,11 +525,20 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
           providers
         );
 
+        const repoUrl =
+          target!.kind === "account"
+            ? `https://github.com/${target!.owner}`
+            : `https://github.com/${target!.owner}/${target!.repo}`;
+        const sandboxId =
+          target!.kind === "account"
+            ? target!.owner
+            : `${target!.owner}/${target!.repo}`;
+
         const session = await createSession({
-          repoUrl: `https://github.com/${repo!.owner}/${repo!.repo}`,
+          repoUrl,
           agent: "gitsandbox",
           provider: modelRef.current.provider,
-          sandboxId: `${repo!.owner}/${repo!.repo}`,
+          sandboxId,
         });
         if (cancelled) return;
         sessionIdRef.current = session.id;
@@ -534,7 +551,7 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
         setStatus(providers.length === 0 ? "needs_auth" : "idle");
       } catch (err) {
         if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to load repo");
+        setError(err instanceof Error ? err.message : "Failed to load target");
         setStatus("error");
       }
     }
@@ -547,7 +564,14 @@ export function useAgent(repo: RepoIdent | null): UseAgentReturn {
       runtimeRef.current = null;
       subscribedRef.current = null;
     };
-  }, [repo?.owner, repo?.repo, repo?.branch, rebuildAgent, syncProviders]);
+  }, [
+    target?.kind,
+    target?.owner,
+    target && target.kind === "repo" ? target.repo : undefined,
+    target && target.kind === "repo" ? target.branch : undefined,
+    rebuildAgent,
+    syncProviders,
+  ]);
 
   const sendMessage = useCallback(
     async (text: string) => {

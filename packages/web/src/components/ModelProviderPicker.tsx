@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ProviderId, SupportedModel } from "../lib/agent";
 import { SUPPORTED_MODELS } from "../lib/agent";
-import { ApiKeyForm, CopilotSignIn, CodexSignIn } from "./AuthPrompt";
+import { ApiKeyForm, CopilotSignIn } from "./AuthPrompt";
 
 const SUBSCRIPTION_PROVIDERS: ProviderId[] = [
   "github-copilot",
@@ -37,7 +37,7 @@ interface ModelProviderPickerProps {
   locked?: boolean;
 }
 
-type AuthPanel = null | "copilot" | "codex" | "apikey";
+type AuthPanel = null | "copilot" | "apikey";
 
 export function ModelProviderPicker({
   activeModel,
@@ -142,11 +142,6 @@ export function ModelProviderPicker({
                 <CopilotSignIn onAuthenticated={handleAuthDone} autoStart />
               </div>
             )}
-            {authPanel === "codex" && (
-              <div className="animate-fade-in mb-2 rounded-xl border border-zinc-800/80 bg-zinc-900/50 p-3">
-                <CodexSignIn onAuthenticated={handleAuthDone} autoStart />
-              </div>
-            )}
             {authPanel === "apikey" && (
               <div className="animate-fade-in mb-2 rounded-xl border border-zinc-800/80 bg-zinc-900/50 p-3">
                 <ApiKeyForm onAuthenticated={handleAuthDone} />
@@ -165,9 +160,9 @@ export function ModelProviderPicker({
                 >
                   <div className="flex min-h-10 items-center justify-between gap-2">
                     <div className="min-w-0">
-                      <h3 className="text-[12.5px] font-semibold text-zinc-200">{title}</h3>
+                      <h3 className={`text-[12.5px] font-semibold ${provider === "openai-codex" && !isConnected ? "text-zinc-500" : "text-zinc-200"}`}>{title}</h3>
                       <p className="text-[10px] text-zinc-600">
-                        {isConnected ? "Connected" : "Not connected"}
+                        {isConnected ? "Connected" : provider === "openai-codex" ? "" : "Not connected"}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1">
@@ -181,13 +176,9 @@ export function ModelProviderPicker({
                         </button>
                       )}
                       {!isConnected && provider === "openai-codex" && (
-                        <button
-                          type="button"
-                          onClick={() => setAuthPanel((p) => (p === "codex" ? null : "codex"))}
-                          className="press focus-ring rounded-lg border border-zinc-700 bg-zinc-800/80 px-2.5 py-1.5 text-[11px] font-medium text-zinc-100 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)]"
-                        >
-                          {authPanel === "codex" ? "Close" : "Log in"}
-                        </button>
+                        <span className="rounded-full bg-zinc-800/80 px-2 py-0.5 text-[10px] font-medium text-zinc-500">
+                          coming very soon
+                        </span>
                       )}
                       {isConnected && (
                         <button

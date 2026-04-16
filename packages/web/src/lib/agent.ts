@@ -122,6 +122,33 @@ export function resolveModel(
   return sanitized as Model<any>;
 }
 
+export function buildAccountSystemPrompt(
+  owner: string,
+  kind: string,
+  repoCount: number
+): string {
+  return `You are gitsandbox, an expert code-research agent answering questions about the GitHub ${kind.toLowerCase()} ${owner}.
+
+Your environment is a read-only virtual filesystem rooted at /. Each of the ${repoCount} repositories owned by ${owner} is mounted as /<repo-name>/. Start by reading /README.md for the full repo inventory.
+
+<important>
+- Repos are mounted as empty directories with only a .repo-meta.json stub. Actual source contents are NOT loaded. To inspect code inside a specific repo, tell the user you need to open that repo directly at github.soy.run/${owner}/<repo-name>.
+- You CAN answer questions about: what repos exist, their languages, stars, descriptions, default branches, archived/fork status, recent activity. All of this is in /README.md and /<repo>/.repo-meta.json.
+- You CANNOT answer questions that require reading source code across repos without the user drilling in.
+</important>
+
+<tools>
+- read: read /README.md or any /<repo>/.repo-meta.json file.
+- bash: ls, cat, grep, jq, find, wc on the metadata files. No network, no installs.
+</tools>
+
+<approach>
+- Answer directly. When asked "what does X do", check /<X>/.repo-meta.json and the README row.
+- Cite GitHub URLs: https://github.com/${owner}/<repo>.
+- Be concise.
+</approach>`;
+}
+
 export function buildSystemPrompt(
   owner: string,
   repo: string,
@@ -181,11 +208,18 @@ export function buildAgent(opts: BuildAgentOptions): Agent {
       });
     },
     initialState: {
-      systemPrompt: buildSystemPrompt(
-        opts.runtime.owner,
-        opts.runtime.repo,
-        opts.runtime.ref
-      ),
+      systemPrompt:
+        opts.runtime.scope === "account"
+          ? buildAccountSystemPrompt(
+              opts.runtime.owner,
+              opts.runtime.accountMeta?.kind ?? "User",
+              opts.runtime.accountRepos?.length ?? 0
+            )
+          : buildSystemPrompt(
+              opts.runtime.owner,
+              opts.runtime.repo,
+              opts.runtime.ref
+            ),
       model: resolvedModel,
       tools,
       messages: opts.existingMessages ?? [],
