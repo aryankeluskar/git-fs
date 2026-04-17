@@ -312,7 +312,6 @@ function SessionRow({
             {meta.label}
           </span>
           <span className="text-zinc-700">·</span>
-          <ProviderBadge provider={session.provider ?? session.agent} />
           <span className="ml-auto tabular-nums text-zinc-600">
             {timeAgo(session.lastActiveAt)}
           </span>
@@ -331,63 +330,4 @@ function SessionRow({
       </button>
     </a>
   );
-}
-
-function ProviderBadge({ provider }: { provider: string }) {
-  const norm = provider.toLowerCase();
-  const { Icon, label, tone } = resolveProvider(norm);
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded border px-1 py-px font-mono text-[9.5px] font-medium uppercase tracking-wider ${tone}`}
-      title={label}
-    >
-      <Icon />
-      <span className="hidden sm:inline">{label}</span>
-    </span>
-  );
-}
-
-function resolveProvider(norm: string) {
-  if (norm.includes("anthropic") || norm.includes("claude")) {
-    return {
-      Icon: () => (
-        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M6.5 4l5.5 16h-3l-1.1-3.4h-5l-1.1 3.4H-1l5.5-16h2zm7.5 0h3l4.5 16h-3l-4.5-16zM5 14.2h3.6L6.8 9 5 14.2z" />
-        </svg>
-      ),
-      label: "Claude",
-      tone: "border-orange-900/60 bg-orange-950/20 text-orange-300/90",
-    };
-  }
-  if (norm.includes("copilot") || norm.includes("github")) {
-    return {
-      Icon: () => (
-        <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
-          <path d="M7.5 13A5.5 5.5 0 012 7.5V5.8c0-.7.8-1.1 1.4-.8L6 6.5A7.8 7.8 0 018 6c.7 0 1.4.2 2 .5l2.6-1.5c.6-.3 1.4.1 1.4.8v1.7A5.5 5.5 0 018.5 13h-1zm-2.2-4.3a1 1 0 100 2 1 1 0 000-2zm5.4 0a1 1 0 100 2 1 1 0 000-2z" />
-        </svg>
-      ),
-      label: "Copilot",
-      tone: "border-sky-900/60 bg-sky-950/20 text-sky-300/90",
-    };
-  }
-  if (norm.includes("openai") || norm.includes("codex") || norm.includes("gpt")) {
-    return {
-      Icon: () => (
-        <svg width="9" height="9" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M22.3 9.8a6 6 0 00-.5-4.9A6 6 0 0015.3 2a6 6 0 00-10 2.2A6 6 0 001 7a6 6 0 00.7 6.9 6 6 0 00.5 4.9 6 6 0 006.5 2.9 6 6 0 005 2.3 6 6 0 005.8-4.2 6 6 0 004-2.9 6 6 0 00-.2-6.1zm-9.1 12.7a4.5 4.5 0 01-2.9-1L15.5 18a.7.7 0 00.4-.7v-6.3l2 1.1v5.9a4.5 4.5 0 01-4.7 4.5z" />
-        </svg>
-      ),
-      label: "OpenAI",
-      tone: "border-emerald-900/60 bg-emerald-950/20 text-emerald-300/90",
-    };
-  }
-  return {
-    Icon: () => (
-      <svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
-        <circle cx="8" cy="8" r="5" />
-      </svg>
-    ),
-    label: norm.charAt(0).toUpperCase() + norm.slice(1),
-    tone: "border-zinc-800 bg-zinc-900/60 text-zinc-400",
-  };
 }

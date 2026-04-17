@@ -145,7 +145,7 @@ export function ModelProviderPicker({
               return (
                 <section
                   key={provider}
-                  className="mb-1 rounded-xl border border-transparent px-2 py-1.5 transition-colors duration-200 hover:border-zinc-800/60 hover:bg-zinc-900/35"
+                  className="mb-1 rounded-xl border border-transparent px-2 py-1.5 transition-colors duration-200"
                 >
                   <div className="flex min-h-10 items-center justify-between gap-2">
                     <div className="min-w-0">
