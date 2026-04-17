@@ -20,7 +20,7 @@ function ensureBuiltins(): void {
   builtinsRegistered = true;
 }
 
-export type ProviderId = "openai-codex" | "github-copilot";
+export type ProviderId = "openai-codex" | "github-copilot" | "anthropic";
 
 export interface SupportedModel {
   provider: ProviderId;
@@ -38,6 +38,17 @@ export const SUPPORTED_MODELS: SupportedModel[] = [
   { provider: "openai-codex", modelId: "gpt-5.4", label: "Codex · GPT-5.4" },
   { provider: "openai-codex", modelId: "gpt-5.4-mini", label: "Codex · GPT-5.4 Mini" },
   { provider: "openai-codex", modelId: "gpt-5.3-codex", label: "Codex · GPT-5.3" },
+
+  // Anthropic (Claude Pro / Max subscription)
+  { provider: "anthropic", modelId: "claude-sonnet-4-6", label: "Claude · Sonnet 4.6" },
+  { provider: "anthropic", modelId: "claude-opus-4-6", label: "Claude · Opus 4.6" },
+  { provider: "anthropic", modelId: "claude-haiku-4-5", label: "Claude · Haiku 4.5" },
+];
+
+export const ANTHROPIC_MODEL_PRIORITY: string[] = [
+  "claude-sonnet-4-6",
+  "claude-opus-4-6",
+  "claude-haiku-4-5",
 ];
 
 export const COPILOT_MODEL_PRIORITY: string[] = [
@@ -119,7 +130,12 @@ Your environment is a read-only virtual filesystem rooted at /. Each of the ${re
 - Answer directly. When asked "what does X do", check /<X>/.repo-meta.json and the README row.
 - Cite GitHub URLs: https://github.com/${owner}/<repo>.
 - Be concise.
-</approach>`;
+</approach>
+
+<style>
+- No emojis. No decorative icons, no greeting flourishes, no "Here are some things you can ask me" menus.
+- Don't pitch capabilities. Answer the question that was asked; if there is no question, respond with general information about the repository using the README.md file.
+</style>`;
 }
 
 export function buildSystemPrompt(
@@ -147,7 +163,12 @@ Your only environment is a read-only virtual shell rooted at the repo snapshot. 
 <completeness>
 - Keep exploring until you can give a grounded answer to the user's actual question.
 - If something is genuinely unknowable from the snapshot (runtime behavior, secrets, closed-source deps), say so and explain what would be needed.
-</completeness>`;
+</completeness>
+
+<style>
+- No emojis. No decorative icons, no greeting flourishes, no "Here are some things you can ask me" menus.
+- Don't pitch capabilities. Answer the question that was asked; if there is no question, respond with one short line.
+</style>`;
 }
 
 export interface BuildAgentOptions {

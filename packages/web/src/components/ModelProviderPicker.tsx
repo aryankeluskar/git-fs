@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ProviderId, SupportedModel } from "../lib/agent";
 import { SUPPORTED_MODELS } from "../lib/agent";
-import { CodexSignIn, CopilotSignIn } from "./AuthPrompt";
+import { ClaudeSignIn, CodexSignIn, CopilotSignIn } from "./AuthPrompt";
 
 const SUBSCRIPTION_PROVIDERS: ProviderId[] = [
   "github-copilot",
+  "anthropic",
   "openai-codex",
 ];
 
 const PROVIDER_TITLE: Record<ProviderId, string> = {
   "github-copilot": "GitHub Copilot",
   "openai-codex": "ChatGPT · Codex",
+  anthropic: "Claude · Pro / Max",
 };
 
 function modelsForProvider(p: ProviderId): SupportedModel[] {
@@ -26,7 +28,7 @@ interface ModelProviderPickerProps {
   locked?: boolean;
 }
 
-type AuthPanel = null | "copilot" | "codex";
+type AuthPanel = null | "copilot" | "codex" | "claude";
 
 export function ModelProviderPicker({
   activeModel,
@@ -130,6 +132,11 @@ export function ModelProviderPicker({
                 <CodexSignIn onAuthenticated={handleAuthDone} autoStart />
               </div>
             )}
+            {authPanel === "claude" && (
+              <div className="animate-fade-in mb-2 rounded-xl border border-zinc-800/80 bg-zinc-900/50 p-3">
+                <ClaudeSignIn onAuthenticated={handleAuthDone} autoStart />
+              </div>
+            )}
             {SUBSCRIPTION_PROVIDERS.map((provider) => {
               const title = PROVIDER_TITLE[provider];
               const isConnected = connected.has(provider);
@@ -164,6 +171,15 @@ export function ModelProviderPicker({
                           className="press focus-ring rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-medium text-zinc-900 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)]"
                         >
                           {authPanel === "codex" ? "Close" : "Log in"}
+                        </button>
+                      )}
+                      {!isConnected && provider === "anthropic" && (
+                        <button
+                          type="button"
+                          onClick={() => setAuthPanel((p) => (p === "claude" ? null : "claude"))}
+                          className="press focus-ring rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-medium text-zinc-900 transition-[opacity,transform] duration-200 ease-[cubic-bezier(0.2,0,0,1)]"
+                        >
+                          {authPanel === "claude" ? "Close" : "Log in"}
                         </button>
                       )}
                       {isConnected && (
@@ -210,7 +226,7 @@ export function ModelProviderPicker({
               );
             })}
 
-            <section className="mb-1 rounded-xl border border-transparent px-2 py-1.5">
+            {/* <section className="mb-1 rounded-xl border border-transparent px-2 py-1.5">
               <div className="flex min-h-10 items-center gap-2">
                 <div className="min-w-0 flex-1">
                   <h3 className="text-[12.5px] font-semibold text-zinc-500">Claude Pro / Max</h3>
@@ -220,7 +236,7 @@ export function ModelProviderPicker({
                   coming very soon
                 </span>
               </div>
-            </section>
+            </section> */}
           </div>
 
           <div className="border-t border-zinc-800/70 px-3 py-2">

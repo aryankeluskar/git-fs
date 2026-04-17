@@ -23,6 +23,9 @@ export default defineConfig({
         ws: true,
       },
       "/health": "http://localhost:8787",
+      "/oauth": "http://localhost:8787",
+      "/copilot-api": "http://localhost:8787",
+      "/anthropic-api": "http://localhost:8787",
     },
   },
 });

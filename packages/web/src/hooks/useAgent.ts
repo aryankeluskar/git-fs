@@ -7,6 +7,7 @@ import type {
   UserMessage,
 } from "@mariozechner/pi-ai";
 import {
+  ANTHROPIC_MODEL_PRIORITY,
   buildAgent,
   COPILOT_MODEL_PRIORITY,
   CODEX_MODEL_PRIORITY,
@@ -20,6 +21,7 @@ import {
   type RepoRuntime,
 } from "../lib/repoRuntime";
 import { deleteCredential, getCredential, setCredential } from "../db/credentials";
+import { getGithubToken } from "../lib/githubAuth";
 import { db } from "../db";
 import {
   createSession,
@@ -47,10 +49,15 @@ import {
   ensureFreshCodex,
   type CodexCredentials,
 } from "../lib/codexOAuth";
-import { getGithubToken } from "../lib/githubAuth";
+import {
+  ensureFreshClaude,
+  getAnthropicBaseUrl,
+  type ClaudeCredentials,
+} from "../lib/claudeOAuth";
 
 const COPILOT_CRED_KEY = "COPILOT_OAUTH";
 const CODEX_CRED_KEY = "CODEX_OAUTH";
+const ANTHROPIC_CRED_KEY = "ANTHROPIC_OAUTH";
 
 async function getCopilotCreds(): Promise<CopilotCredentials | null> {
   const raw = await getCredential(COPILOT_CRED_KEY);
@@ -78,6 +85,20 @@ async function getCodexCreds(): Promise<CodexCredentials | null> {
 
 async function saveCodexCreds(creds: CodexCredentials): Promise<void> {
   await setCredential(CODEX_CRED_KEY, JSON.stringify(creds));
+}
+
+async function getClaudeCreds(): Promise<ClaudeCredentials | null> {
+  const raw = await getCredential(ANTHROPIC_CRED_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as ClaudeCredentials;
+  } catch {
+    return null;
+  }
+}
+
+async function saveClaudeCreds(creds: ClaudeCredentials): Promise<void> {
+  await setCredential(ANTHROPIC_CRED_KEY, JSON.stringify(creds));
 }
 
 export type ChatStatus =
@@ -137,6 +158,8 @@ async function checkConnectedProviders(): Promise<string[]> {
   if (copilot) list.push("github-copilot");
   const codex = await getCodexCreds();
   if (codex) list.push("openai-codex");
+  const claude = await getClaudeCreds();
+  if (claude) list.push("anthropic");
   return list;
 }
 
@@ -153,6 +176,13 @@ async function resolveApiKey(provider: string): Promise<string | undefined> {
     if (!creds) return undefined;
     const fresh = await ensureFreshCodex(creds);
     if (fresh.access !== creds.access) await saveCodexCreds(fresh);
+    return fresh.access;
+  }
+  if (provider === "anthropic") {
+    const creds = await getClaudeCreds();
+    if (!creds) return undefined;
+    const fresh = await ensureFreshClaude(creds);
+    if (fresh.access !== creds.access) await saveClaudeCreds(fresh);
     return fresh.access;
   }
   return undefined;
@@ -263,7 +293,8 @@ function targetBranch(target: AgentTarget): string | undefined {
 
 const PROVIDER_PRIORITY: Record<string, number> = {
   "github-copilot": 0,
-  "openai-codex": 1,
+  anthropic: 1,
+  "openai-codex": 2,
 };
 
 function bestProvider(providers: string[]): string | undefined {
@@ -333,6 +364,14 @@ async function pickModelForProviders(
       if (match) return match;
     }
   }
+  if (preferred === "anthropic") {
+    for (const id of ANTHROPIC_MODEL_PRIORITY) {
+      const match = SUPPORTED_MODELS.find(
+        (m) => m.provider === "anthropic" && m.modelId === id
+      );
+      if (match) return match;
+    }
+  }
   const match = SUPPORTED_MODELS.find((m) => m.provider === preferred);
   return match ?? currentModel;
 }
@@ -340,17 +379,23 @@ async function pickModelForProviders(
 async function resolveModelOverrides(
   model: SupportedModel
 ): Promise<{ baseUrl?: string } | undefined> {
-  if (model.provider !== "github-copilot") return undefined;
-  const creds = await getCopilotCreds();
-  if (!creds) return undefined;
-  const fresh = await ensureFreshCopilot(creds);
-  if (fresh.access !== creds.access) await saveCopilotCreds(fresh);
-  return { baseUrl: getCopilotBaseUrl(fresh.access, fresh.enterpriseUrl) };
+  if (model.provider === "github-copilot") {
+    const creds = await getCopilotCreds();
+    if (!creds) return undefined;
+    const fresh = await ensureFreshCopilot(creds);
+    if (fresh.access !== creds.access) await saveCopilotCreds(fresh);
+    return { baseUrl: getCopilotBaseUrl(fresh.access, fresh.enterpriseUrl) };
+  }
+  if (model.provider === "anthropic") {
+    return { baseUrl: getAnthropicBaseUrl() };
+  }
+  return undefined;
 }
 
 const LOGOUT_CRED_KEY: Record<string, string> = {
   "github-copilot": "COPILOT_OAUTH",
   "openai-codex": "CODEX_OAUTH",
+  anthropic: "ANTHROPIC_OAUTH",
 };
 
 export function useAgent(target: AgentTarget | null): UseAgentReturn {
@@ -568,13 +613,13 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
           target!.kind === "account"
             ? await createAccountRuntime({
                 owner: target!.owner,
-                getToken: getGithubToken,
+                getToken: async () => await getGithubToken(),
               })
             : await createRepoRuntime({
                 owner: target!.owner,
                 repo: target!.repo,
                 ref: target!.branch,
-                getToken: getGithubToken,
+                getToken: async () => await getGithubToken(),
               });
         if (cancelled) return;
         runtimeRef.current = runtime;

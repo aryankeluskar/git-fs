@@ -96,6 +96,78 @@ app.all("/oauth/gh/*", async (c) => {
   });
 });
 
+app.all("/oauth/anthropic/token", async (c) => {
+  const target = "https://platform.claude.com/v1/oauth/token";
+
+  const headers = new Headers();
+  const contentType = c.req.header("Content-Type");
+  if (contentType) headers.set("Content-Type", contentType);
+  headers.set("Accept", "application/json");
+  headers.set("User-Agent", "claude-cli/1.0.0");
+
+  const upstream = await fetch(target, {
+    method: c.req.method,
+    headers,
+    body:
+      c.req.method === "GET" || c.req.method === "HEAD"
+        ? undefined
+        : c.req.raw.body,
+  });
+
+  const respHeaders = new Headers(upstream.headers);
+  respHeaders.delete("set-cookie");
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: respHeaders,
+  });
+});
+
+app.all("/anthropic-api/*", async (c) => {
+  const prefix = "/anthropic-api";
+  const rest = c.req.path.slice(prefix.length) || "/";
+  const search = new URL(c.req.url).search;
+  const target = `https://api.anthropic.com${rest}${search}`;
+
+  const headers = new Headers(c.req.raw.headers);
+  headers.delete("host");
+  headers.delete("origin");
+  headers.delete("referer");
+  headers.delete("cookie");
+  headers.delete("accept-encoding");
+  // Claude Code identity - OAuth subscription tokens only work against
+  // endpoints that look like the first-party CLI.
+  headers.set("User-Agent", "claude-cli/1.0.0 (external, cli)");
+  headers.set("X-App", "cli");
+  if (!headers.has("anthropic-version")) {
+    headers.set("anthropic-version", "2023-06-01");
+  }
+  if (!headers.has("anthropic-beta")) {
+    headers.set(
+      "anthropic-beta",
+      "claude-code-20250219,oauth-2025-04-20,fine-grained-tool-streaming-2025-05-14",
+    );
+  }
+
+  const init: RequestInit = {
+    method: c.req.method,
+    headers,
+    body:
+      c.req.method === "GET" || c.req.method === "HEAD"
+        ? undefined
+        : c.req.raw.body,
+  };
+
+  const upstream = await fetch(target, init);
+  const respHeaders = new Headers(upstream.headers);
+  respHeaders.delete("set-cookie");
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers: respHeaders,
+  });
+});
+
 app.all("/copilot-api/:host/*", async (c) => {
   const host = c.req.param("host");
   if (!/^[a-z0-9.-]+\.githubcopilot\.com$/i.test(host) && !/^copilot-api\.[a-z0-9.-]+$/i.test(host)) {
