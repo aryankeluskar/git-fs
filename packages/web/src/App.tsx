@@ -496,7 +496,7 @@ function HomePage() {
             >
               pi-agent
             </a>{" "}
-            ·{" "}
+             and {" "}
             <a
               href="https://github.com/vercel-labs/just-bash"
               target="_blank"

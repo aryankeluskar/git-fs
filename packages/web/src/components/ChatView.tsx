@@ -56,24 +56,11 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
           {isEmpty && (
             <div className="flex min-h-[35vh] flex-col items-center justify-center text-center animate-fade-in">
               <div className="mb-6 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
-                {isAccount ? (
                   <img
-                    src={`https://github.com/${repoLabel}.png?size=72`}
-                    alt={repoLabel}
+                    src={`https://github.com/${repoLabel.split("/")[0]}.png?size=72`}
+                    alt={repoLabel.split("/")[0]}
                     className="h-9 w-9 rounded-lg"
                   />
-                ) : (
-                  <svg
-                    width="36"
-                    height="36"
-                    viewBox="0 0 16 16"
-                    fill="none"
-                    className="text-emerald-500/80"
-                  >
-                    <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" stroke="currentColor" strokeWidth="1" />
-                    <path d="M4 8h3M4 6h5M4 10h4" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" />
-                  </svg>
-                )}
               </div>
               <h3 className="mb-2 text-xl font-semibold tracking-tight text-zinc-100">
                 {repoLabel}
