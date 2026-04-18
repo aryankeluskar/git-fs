@@ -245,7 +245,9 @@ function messagesToParts(messages: Message[]): OcMessage[] {
             type: "tool-result",
             toolCallId: c.id,
             toolName: c.name,
-            result: tr.details ?? { text: textContent },
+            result: tr.details
+              ? { ...tr.details, text: textContent || undefined }
+              : { text: textContent },
             isError: tr.isError,
           });
         }

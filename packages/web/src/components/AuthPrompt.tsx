@@ -612,8 +612,9 @@ export function GithubAuthGate({
   onAuthenticated,
 }: GithubAuthGateProps) {
   return (
-    <div className="flex flex-1 items-center justify-center px-6 py-10">
-      <div className="w-full max-w-md animate-fade-in">
+    <div className="relative flex flex-1 items-center justify-center px-6 py-10">
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-grid" />
+      <div className="relative w-full max-w-md animate-fade-in">
         <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 shadow-inset-hair">
           <div className="mb-5 flex items-start gap-3">
             <div className="flex h-10 w-10 flex-none items-center justify-center rounded-lg bg-zinc-800 text-zinc-300">

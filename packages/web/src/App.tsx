@@ -401,7 +401,7 @@ function HomePage() {
     <div className="relative flex flex-1 flex-col overflow-y-auto">
       {/* Background decoration */}
       <div aria-hidden className="pointer-events-none absolute inset-0 hero-glow" />
-      <div aria-hidden className="pointer-events-none absolute inset-0 hero-grid" />
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-grid" />
 
       <div className="relative flex flex-1 flex-col items-center justify-start px-6 pt-16 pb-20 md:pt-[10vh]">
         <div className="stagger-hero w-full max-w-xl">

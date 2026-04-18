@@ -61,10 +61,11 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
     : "Ask anything about this codebase. The agent uses a custom VFS built on top of GitHub API to read files and answer questions.";
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden bg-zinc-950">
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-zinc-950">
+      <div aria-hidden className="pointer-events-none absolute inset-0 bg-grid" />
       <div
         ref={scrollRef}
-        className="smooth-scroll flex-1 overflow-y-auto"
+        className="relative smooth-scroll flex-1 overflow-y-auto"
       >
         <div className="mx-auto w-full max-w-3xl px-6 py-6">
           {messages.length > 0 && (

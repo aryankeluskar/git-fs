@@ -75,7 +75,7 @@ export function ChatComposer({
                 handleInput();
               }}
               onKeyDown={handleKeyDown}
-              placeholder="What would you like to know?"
+              placeholder="Ask anything"
               disabled={disabled}
               rows={1}
               className={`w-full resize-none bg-transparent px-4 py-3 pr-14 text-[14.5px] leading-relaxed text-zinc-100 placeholder-zinc-600 outline-none disabled:opacity-40 ${inputRadius}`}
