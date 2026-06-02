@@ -21,7 +21,6 @@
     "react": "^19",
     "react-dom": "^19",
     "react-markdown": "^10.1.0",
-    "react-router-dom": "^7",
     "rehype-katex": "^7.0.1",
     "remark-gfm": "^4.0.1",
     "remark-math": "^6.0.0"
@@ -31,9 +30,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4",
-    "autoprefixer": "^10",
     "jsdom": "^26",
-    "postcss": "^8",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vite": "^6",

@@ -50,7 +50,3 @@ export async function replaceSessionMessages(
     );
   });
 }
-
-export async function deleteSessionMessages(sessionId: number): Promise<void> {
-  await db.messages.where("sessionId").equals(sessionId).delete();
-}

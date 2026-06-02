@@ -1,5 +1,3 @@
-import { InMemoryFs } from "just-bash/browser";
-
 const GH_API = "https://api.github.com";
 
 export type AccountKind = "User" | "Organization";
@@ -125,44 +123,4 @@ export function buildAccountManifest(meta: AccountMeta, repos: RepoSummary[]): s
     );
   }
   return lines.join("\n");
-}
-
-export interface AccountFsSkeleton {
-  fs: InMemoryFs;
-  repoNames: string[];
-}
-
-/**
- * Build a skeleton FS for an account:
- * - /README.md  (account manifest)
- * - /<repo>/.repo-meta.json  (per-repo metadata stub)
- * Tree contents for each repo are NOT fetched; call hydrateRepoInto() on demand.
- */
-export function buildAccountSkeleton(
-  meta: AccountMeta,
-  repos: RepoSummary[]
-): AccountFsSkeleton {
-  const fs = new InMemoryFs();
-  fs.writeFileSync("/README.md", buildAccountManifest(meta, repos));
-  for (const r of repos) {
-    fs.mkdirSync(`/${r.name}`, { recursive: true });
-    fs.writeFileSync(
-      `/${r.name}/.repo-meta.json`,
-      JSON.stringify(
-        {
-          owner: meta.login,
-          repo: r.name,
-          defaultBranch: r.defaultBranch,
-          description: r.description,
-          language: r.language,
-          stars: r.stars,
-          archived: r.archived,
-          fork: r.fork,
-        },
-        null,
-        2
-      )
-    );
-  }
-  return { fs, repoNames: repos.map((r) => r.name) };
 }

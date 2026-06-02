@@ -4,7 +4,6 @@ import {
   fetchAccountMeta,
   fetchAccountRepos,
   buildAccountManifest,
-  buildAccountSkeleton,
   type RepoSummary,
   type AccountMeta,
 } from "../src/lib/githubAccount";
@@ -150,27 +149,5 @@ describe("buildAccountManifest", () => {
       { ...repos[0], description: "pipe|test" },
     ]);
     expect(md).toContain("pipe\\|test");
-  });
-});
-
-describe("buildAccountSkeleton", () => {
-  it("creates README and per-repo metadata stubs", async () => {
-    const { fs, repoNames } = buildAccountSkeleton(meta, repos);
-    expect(repoNames).toEqual(["alpha", "beta"]);
-    const dec = new TextDecoder();
-    const readme = dec.decode(await fs.readFileBuffer("/README.md"));
-    expect(readme).toContain("aryankeluskar");
-    const alphaMeta = JSON.parse(
-      dec.decode(await fs.readFileBuffer("/alpha/.repo-meta.json"))
-    );
-    expect(alphaMeta.owner).toBe("aryankeluskar");
-    expect(alphaMeta.repo).toBe("alpha");
-    expect(alphaMeta.defaultBranch).toBe("main");
-  });
-
-  it("does not fetch tree contents (only meta stubs present)", async () => {
-    const { fs } = buildAccountSkeleton(meta, repos);
-    const entries = await fs.readdir("/alpha");
-    expect(entries).toEqual([".repo-meta.json"]);
   });
 });

@@ -13,8 +13,5 @@
   },
   "devDependencies": {
     "wrangler": "^4.82.2"
-  },
-  "dependencies": {
-    "@cloudflare/shell": "^0.3.3"
   }
 }

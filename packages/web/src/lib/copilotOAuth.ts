@@ -207,27 +207,3 @@ export function getCopilotBaseUrl(
   }
   return `${api}/copilot-api/${host}`;
 }
-
-export interface CopilotLoginHandlers {
-  onCode: (info: { userCode: string; verificationUri: string }) => void;
-  signal?: AbortSignal;
-  enterpriseDomain?: string;
-}
-
-export async function loginCopilot(
-  handlers: CopilotLoginHandlers
-): Promise<CopilotCredentials> {
-  const device = await startCopilotDeviceFlow(handlers.enterpriseDomain);
-  handlers.onCode({
-    userCode: device.user_code,
-    verificationUri: device.verification_uri,
-  });
-  const ghToken = await pollForGithubAccessToken(
-    device.device_code,
-    device.interval,
-    device.expires_in,
-    handlers.enterpriseDomain,
-    handlers.signal
-  );
-  return exchangeGithubTokenForCopilot(ghToken, handlers.enterpriseDomain);
-}

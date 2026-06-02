@@ -15,10 +15,6 @@ export async function createSession(
   return db.sessions.get(id) as Promise<Session>;
 }
 
-export async function listSessions(): Promise<Session[]> {
-  return db.sessions.orderBy("lastActiveAt").reverse().toArray();
-}
-
 export async function getSession(id: number): Promise<Session | undefined> {
   return db.sessions.get(id);
 }
