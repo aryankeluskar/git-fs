@@ -21,7 +21,12 @@ import {
   type RepoRuntime,
 } from "../lib/repoRuntime";
 import { deleteCredential, getCredential, setCredential } from "../db/credentials";
-import { getGithubToken } from "../lib/githubAuth";
+import {
+  getGithubToken,
+  COPILOT_OAUTH_KEY,
+  CODEX_OAUTH_KEY,
+  ANTHROPIC_OAUTH_KEY,
+} from "../lib/githubAuth";
 import { db } from "../db";
 import {
   createSession,
@@ -55,12 +60,8 @@ import {
   type ClaudeCredentials,
 } from "../lib/claudeOAuth";
 
-const COPILOT_CRED_KEY = "COPILOT_OAUTH";
-const CODEX_CRED_KEY = "CODEX_OAUTH";
-const ANTHROPIC_CRED_KEY = "ANTHROPIC_OAUTH";
-
 async function getCopilotCreds(): Promise<CopilotCredentials | null> {
-  const raw = await getCredential(COPILOT_CRED_KEY);
+  const raw = await getCredential(COPILOT_OAUTH_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as CopilotCredentials;
@@ -70,11 +71,11 @@ async function getCopilotCreds(): Promise<CopilotCredentials | null> {
 }
 
 async function saveCopilotCreds(creds: CopilotCredentials): Promise<void> {
-  await setCredential(COPILOT_CRED_KEY, JSON.stringify(creds));
+  await setCredential(COPILOT_OAUTH_KEY, JSON.stringify(creds));
 }
 
 async function getCodexCreds(): Promise<CodexCredentials | null> {
-  const raw = await getCredential(CODEX_CRED_KEY);
+  const raw = await getCredential(CODEX_OAUTH_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as CodexCredentials;
@@ -84,11 +85,11 @@ async function getCodexCreds(): Promise<CodexCredentials | null> {
 }
 
 async function saveCodexCreds(creds: CodexCredentials): Promise<void> {
-  await setCredential(CODEX_CRED_KEY, JSON.stringify(creds));
+  await setCredential(CODEX_OAUTH_KEY, JSON.stringify(creds));
 }
 
 async function getClaudeCreds(): Promise<ClaudeCredentials | null> {
-  const raw = await getCredential(ANTHROPIC_CRED_KEY);
+  const raw = await getCredential(ANTHROPIC_OAUTH_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw) as ClaudeCredentials;
@@ -98,7 +99,7 @@ async function getClaudeCreds(): Promise<ClaudeCredentials | null> {
 }
 
 async function saveClaudeCreds(creds: ClaudeCredentials): Promise<void> {
-  await setCredential(ANTHROPIC_CRED_KEY, JSON.stringify(creds));
+  await setCredential(ANTHROPIC_OAUTH_KEY, JSON.stringify(creds));
 }
 
 export type ChatStatus =
@@ -388,9 +389,9 @@ async function resolveModelOverrides(
 }
 
 const LOGOUT_CRED_KEY: Record<string, string> = {
-  "github-copilot": "COPILOT_OAUTH",
-  "openai-codex": "CODEX_OAUTH",
-  anthropic: "ANTHROPIC_OAUTH",
+  "github-copilot": COPILOT_OAUTH_KEY,
+  "openai-codex": CODEX_OAUTH_KEY,
+  anthropic: ANTHROPIC_OAUTH_KEY,
 };
 
 export function useAgent(target: AgentTarget | null): UseAgentReturn {

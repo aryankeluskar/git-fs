@@ -11,6 +11,9 @@ import {
   getGithubToken,
   loginGithub,
   saveGithubCredentials,
+  COPILOT_OAUTH_KEY,
+  CODEX_OAUTH_KEY,
+  ANTHROPIC_OAUTH_KEY,
 } from "../lib/githubAuth";
 
 const CODEX_CLI_COMMAND = "npx @gitinspect/cli login -p codex";
@@ -136,7 +139,7 @@ export function CopilotSignIn({
       }
       setStage("exchanging");
       const creds = await exchangeGithubTokenForCopilot(ghToken);
-      await setCredential("COPILOT_OAUTH", JSON.stringify(creds));
+      await setCredential(COPILOT_OAUTH_KEY, JSON.stringify(creds));
       setStage("done");
       await onAuthenticated();
     } catch (err) {
@@ -228,7 +231,7 @@ export function CodexSignIn({
     setError(null);
     try {
       const creds = parseImportedCodexCredentials(code);
-      await setCredential("CODEX_OAUTH", JSON.stringify(creds));
+      await setCredential(CODEX_OAUTH_KEY, JSON.stringify(creds));
       setCode("");
       await onAuthenticated();
     } catch (err) {
@@ -354,7 +357,7 @@ export function ClaudeSignIn({
     setError(null);
     try {
       const creds = parseImportedClaudeCredentials(code);
-      await setCredential("ANTHROPIC_OAUTH", JSON.stringify(creds));
+      await setCredential(ANTHROPIC_OAUTH_KEY, JSON.stringify(creds));
       setCode("");
       await onAuthenticated();
     } catch (err) {

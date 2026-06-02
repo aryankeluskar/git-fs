@@ -1,4 +1,4 @@
-const GH_API = "https://api.github.com";
+import { ghFetch, type Fetcher } from "./githubApi";
 
 export type AccountKind = "User" | "Organization";
 
@@ -42,21 +42,10 @@ interface GhRepoResponse {
   fork: boolean;
 }
 
-type Fetcher = (path: string, token?: string) => Promise<Response>;
-
-function defaultFetch(path: string, token?: string): Promise<Response> {
-  const headers: Record<string, string> = {
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return fetch(`${GH_API}${path}`, { headers });
-}
-
 export async function fetchAccountMeta(
   owner: string,
   token?: string,
-  fetcher: Fetcher = defaultFetch
+  fetcher: Fetcher = ghFetch
 ): Promise<AccountMeta> {
   const r = await fetcher(`/users/${owner}`, token);
   if (!r.ok) throw new Error(`Account ${owner} not found (${r.status})`);
@@ -75,7 +64,7 @@ export async function fetchAccountRepos(
   kind: AccountKind,
   opts: { limit?: number; token?: string; fetcher?: Fetcher } = {}
 ): Promise<RepoSummary[]> {
-  const { limit = 50, token, fetcher = defaultFetch } = opts;
+  const { limit = 50, token, fetcher = ghFetch } = opts;
   const base = kind === "Organization" ? `/orgs/${owner}/repos` : `/users/${owner}/repos`;
   const perPage = Math.min(100, limit);
   const out: RepoSummary[] = [];

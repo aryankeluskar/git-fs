@@ -1,4 +1,10 @@
 import { getApiBase } from "./config";
+import {
+  requireString,
+  requireNumber,
+  parseLoginCode,
+  postJsonToken,
+} from "./oauthUtils";
 
 /**
  * Claude Pro/Max (Anthropic subscription) OAuth credential handling.
@@ -36,28 +42,6 @@ interface ClaudeCredentialsDraft {
   providerId?: unknown;
 }
 
-function decodeBase64Url(value: string): string {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  const binary = atob(padded);
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`Login code is missing ${field}`);
-  }
-  return value;
-}
-
-function requireNumber(value: unknown, field: string): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(`Login code has invalid ${field}`);
-  }
-  return value;
-}
-
 function validateDraft(draft: ClaudeCredentialsDraft): ClaudeCredentials {
   if (draft.providerId !== "anthropic") {
     throw new Error("Login code is not for Claude (anthropic)");
@@ -71,57 +55,21 @@ function validateDraft(draft: ClaudeCredentialsDraft): ClaudeCredentials {
 }
 
 export function parseImportedClaudeCredentials(value: string): ClaudeCredentials {
-  const trimmed = value.trim();
-  if (trimmed.length === 0) throw new Error("Paste the login code first");
-
-  let jsonText: string;
-  if (trimmed.startsWith("{")) {
-    jsonText = trimmed;
-  } else {
-    try {
-      jsonText = decodeBase64Url(trimmed);
-    } catch {
-      throw new Error("Login code is not valid base64url");
-    }
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error("Login code is not valid JSON");
-  }
-
-  if (typeof parsed !== "object" || parsed === null) {
-    throw new Error("Login code must be a JSON object");
-  }
-
-  return validateDraft(parsed as ClaudeCredentialsDraft);
-}
-
-async function postTokenRequest(
-  body: Record<string, string>,
-): Promise<Record<string, unknown>> {
-  const res = await fetch(`${getApiBase()}${TOKEN_PROXY_PATH}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Anthropic token request failed: ${res.status} ${text}`);
-  }
-  return (await res.json()) as Record<string, unknown>;
+  return validateDraft(parseLoginCode(value) as ClaudeCredentialsDraft);
 }
 
 export async function refreshClaude(
   creds: ClaudeCredentials,
 ): Promise<ClaudeCredentials> {
-  const tokenData = await postTokenRequest({
-    client_id: CLIENT_ID,
-    grant_type: "refresh_token",
-    refresh_token: creds.refresh,
-  });
+  const tokenData = await postJsonToken(
+    `${getApiBase()}${TOKEN_PROXY_PATH}`,
+    {
+      client_id: CLIENT_ID,
+      grant_type: "refresh_token",
+      refresh_token: creds.refresh,
+    },
+    "Anthropic token request failed"
+  );
 
   const access = tokenData.access_token;
   const refresh = tokenData.refresh_token;

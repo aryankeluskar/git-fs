@@ -16,10 +16,7 @@ import {
   type RepoSummary,
 } from "./githubAccount";
 import { hydrateRepoFs, type HydratedRepoFs } from "./githubFs";
-
-const GH_API = "https://api.github.com";
-
-type Fetcher = (path: string, token?: string) => Promise<Response>;
+import { ghFetch, type Fetcher } from "./githubApi";
 
 interface ReadFileOptions {
   encoding?: BufferEncoding | null;
@@ -59,15 +56,6 @@ export interface LazyAccountFsOptions {
    * before giving up with ENOENT. Defaults to true.
    */
   optimistic?: boolean;
-}
-
-function defaultFetcher(path: string, token?: string): Promise<Response> {
-  const headers: Record<string, string> = {
-    Accept: "application/vnd.github+json",
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return fetch(`${GH_API}${path}`, { headers });
 }
 
 function enoent(path: string): Error {
@@ -139,7 +127,7 @@ export class LazyAccountFs implements IFileSystem {
     this.meta = opts.meta;
     this.inventory = new Map(opts.repos.map((r) => [r.name, r]));
     this.token = opts.token;
-    this.fetcher = opts.fetcher ?? defaultFetcher;
+    this.fetcher = opts.fetcher ?? ghFetch;
     this.onHydration = opts.onHydration;
     this.hydrateImpl = opts.hydrate;
     this.optimistic = opts.optimistic ?? true;
@@ -322,7 +310,10 @@ export class LazyAccountFs implements IFileSystem {
     return this.mountable.exists(path);
   }
 
-  async stat(path: string): Promise<FsStat> {
+  private async statVia(
+    path: string,
+    delegate: (p: string) => Promise<FsStat>
+  ): Promise<FsStat> {
     const seg = firstSegment(path);
     const n = normalize(path);
     if (seg && this.inventory.has(seg) && !this.hydratedRepos.has(seg)) {
@@ -339,26 +330,15 @@ export class LazyAccountFs implements IFileSystem {
       }
       await this.ensureHydrated(seg);
     }
-    return this.mountable.stat(path);
+    return delegate(path);
+  }
+
+  async stat(path: string): Promise<FsStat> {
+    return this.statVia(path, (p) => this.mountable.stat(p));
   }
 
   async lstat(path: string): Promise<FsStat> {
-    const seg = firstSegment(path);
-    const n = normalize(path);
-    if (seg && this.inventory.has(seg) && !this.hydratedRepos.has(seg)) {
-      if (n === `/${seg}`) {
-        return {
-          isFile: false,
-          isDirectory: true,
-          isSymbolicLink: false,
-          mode: 0o755,
-          size: 0,
-          mtime: new Date(),
-        };
-      }
-      await this.ensureHydrated(seg);
-    }
-    return this.mountable.lstat(path);
+    return this.statVia(path, (p) => this.mountable.lstat(p));
   }
 
   async readdir(path: string): Promise<string[]> {

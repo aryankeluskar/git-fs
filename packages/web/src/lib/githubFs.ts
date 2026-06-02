@@ -1,6 +1,5 @@
 import { InMemoryFs } from "just-bash/browser";
-
-const GH_API = "https://api.github.com";
+import { GH_API, ghFetch } from "./githubApi";
 
 export interface GitHubFsOptions {
   owner: string;
@@ -70,19 +69,6 @@ function isTextual(path: string, size: number | undefined): boolean {
   ];
   const lower = path.toLowerCase();
   return !binaryExts.some((ext) => lower.endsWith(ext));
-}
-
-async function ghFetch(
-  path: string,
-  token: string | undefined,
-  accept = "application/vnd.github+json"
-): Promise<Response> {
-  const headers: Record<string, string> = {
-    Accept: accept,
-    "X-GitHub-Api-Version": "2022-11-28",
-  };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  return fetch(`${GH_API}${path}`, { headers });
 }
 
 export async function resolveRef(

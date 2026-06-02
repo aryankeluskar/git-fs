@@ -19,6 +19,8 @@ import {
 
 export const GITHUB_OAUTH_KEY = "GITHUB_OAUTH";
 export const COPILOT_OAUTH_KEY = "COPILOT_OAUTH";
+export const CODEX_OAUTH_KEY = "CODEX_OAUTH";
+export const ANTHROPIC_OAUTH_KEY = "ANTHROPIC_OAUTH";
 export const GITHUB_PAT_KEY = "GITHUB_TOKEN";
 
 export interface GithubCredentials {

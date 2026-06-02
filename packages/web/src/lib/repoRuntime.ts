@@ -7,6 +7,7 @@ import {
   type RepoSummary,
 } from "./githubAccount";
 import { LazyAccountFs, type HydrationEvent } from "./accountFs";
+import { ghFetch } from "./githubApi";
 
 export type RuntimeScope = "repo" | "account";
 
@@ -79,25 +80,17 @@ export async function createAccountRuntime(
   opts: CreateAccountRuntimeOptions
 ): Promise<RepoRuntime> {
   const token = opts.getToken ? await opts.getToken() : undefined;
-  const fetcher = async (path: string, t?: string) => {
-    const headers: Record<string, string> = {
-      Accept: "application/vnd.github+json",
-      "X-GitHub-Api-Version": "2022-11-28",
-    };
-    if (t) headers.Authorization = `Bearer ${t}`;
-    return fetch(`https://api.github.com${path}`, { headers });
-  };
-  const meta = await fetchAccountMeta(opts.owner, token, fetcher);
+  const meta = await fetchAccountMeta(opts.owner, token, ghFetch);
   const repos = await fetchAccountRepos(opts.owner, meta.kind, {
     limit: opts.limit ?? 50,
     token,
-    fetcher,
+    fetcher: ghFetch,
   });
   const fs = new LazyAccountFs({
     meta,
     repos,
     token: opts.getToken,
-    fetcher,
+    fetcher: ghFetch,
     onHydration: opts.onHydration,
   });
   const bash = new Bash({ cwd: "/", fs });

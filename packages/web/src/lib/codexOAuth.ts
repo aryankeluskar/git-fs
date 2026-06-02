@@ -1,3 +1,10 @@
+import {
+  requireString,
+  requireNumber,
+  parseLoginCode,
+  postJsonToken,
+} from "./oauthUtils";
+
 const CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
 const TOKEN_URL = "https://auth.openai.com/oauth/token";
 const JWT_CLAIM_PATH = "https://api.openai.com/auth";
@@ -37,28 +44,6 @@ function getAccountId(accessToken: string): string | undefined {
   return (authValue as { chatgpt_account_id?: string }).chatgpt_account_id;
 }
 
-function decodeBase64Url(value: string): string {
-  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
-  const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
-  const binary = atob(padded);
-  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
-function requireString(value: unknown, field: string): string {
-  if (typeof value !== "string" || value.trim().length === 0) {
-    throw new Error(`Login code is missing ${field}`);
-  }
-  return value;
-}
-
-function requireNumber(value: unknown, field: string): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(`Login code has invalid ${field}`);
-  }
-  return value;
-}
-
 function validateDraft(draft: CodexCredentialsDraft): CodexCredentials {
   if (draft.providerId !== "openai-codex") {
     throw new Error("Login code is not for ChatGPT / Codex");
@@ -73,34 +58,9 @@ function validateDraft(draft: CodexCredentialsDraft): CodexCredentials {
 }
 
 export function parseImportedCodexCredentials(value: string): CodexCredentials {
-  const trimmed = value.trim();
-  if (trimmed.length === 0) throw new Error("Paste the login code first");
+  const draft = parseLoginCode(value) as CodexCredentialsDraft;
 
-  let jsonText: string;
-  if (trimmed.startsWith("{")) {
-    jsonText = trimmed;
-  } else {
-    try {
-      jsonText = decodeBase64Url(trimmed);
-    } catch {
-      throw new Error("Login code is not valid base64url");
-    }
-  }
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    throw new Error("Login code is not valid JSON");
-  }
-
-  if (typeof parsed !== "object" || parsed === null) {
-    throw new Error("Login code must be a JSON object");
-  }
-
-  const draft = parsed as CodexCredentialsDraft;
-
-  // If accountId is missing but access token is a JWT we can recover it
+  // If accountId is missing but the access token is a JWT we can recover it.
   if (typeof draft.accountId !== "string" && typeof draft.access === "string") {
     const recovered = getAccountId(draft.access);
     if (recovered) draft.accountId = recovered;
@@ -109,27 +69,16 @@ export function parseImportedCodexCredentials(value: string): CodexCredentials {
   return validateDraft(draft);
 }
 
-async function postTokenRequest(
-  body: Record<string, string>,
-): Promise<Record<string, unknown>> {
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Token request failed: ${res.status} ${text}`);
-  }
-  return (await res.json()) as Record<string, unknown>;
-}
-
 export async function refreshCodex(creds: CodexCredentials): Promise<CodexCredentials> {
-  const tokenData = await postTokenRequest({
-    client_id: CLIENT_ID,
-    grant_type: "refresh_token",
-    refresh_token: creds.refresh,
-  });
+  const tokenData = await postJsonToken(
+    TOKEN_URL,
+    {
+      client_id: CLIENT_ID,
+      grant_type: "refresh_token",
+      refresh_token: creds.refresh,
+    },
+    "Token request failed"
+  );
 
   const access = tokenData.access_token;
   const refresh = tokenData.refresh_token;
