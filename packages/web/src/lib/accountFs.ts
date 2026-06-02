@@ -258,8 +258,7 @@ export class LazyAccountFs implements IFileSystem {
           token: this.token,
         });
 
-    // Write metadata files into the hydrated fs so the /<repo>/.repo-meta.json
-    // contract from the previous skeleton model still holds.
+    // Write .repo-meta.json into the child fs so /<repo>/.repo-meta.json is always readable.
     const childFs = hydrated.fs as InMemoryFs;
     childFs.writeFileSync(
       "/.repo-meta.json",
@@ -292,7 +291,6 @@ export class LazyAccountFs implements IFileSystem {
     });
   }
 
-  // ---- IFileSystem read-path methods (trigger hydration) -----------------
 
   async readFile(
     path: string,
@@ -386,7 +384,6 @@ export class LazyAccountFs implements IFileSystem {
     return this.mountable.readlink(path);
   }
 
-  // ---- Write-path methods (read-only fs; reject) -------------------------
 
   async writeFile(
     _path: string,
@@ -436,7 +433,6 @@ export class LazyAccountFs implements IFileSystem {
     throw new Error("EROFS: read-only file system");
   }
 
-  // ---- Utility methods ---------------------------------------------------
 
   resolvePath(base: string, path: string): string {
     return this.mountable.resolvePath(base, path);

@@ -124,15 +124,6 @@ export function ChatComposer({
           </div>
         </div>
       </div>
-
-      {/* {isStreaming && (
-        <p className="mt-2 text-center text-[11px] text-zinc-500 animate-fade-in">
-          Agent is working...{" "}
-          <button onClick={onAbort} className="text-emerald-400 underline underline-offset-2 hover:text-emerald-300">
-            Stop
-          </button>
-        </p>
-      )} */}
     </div>
   );
 }

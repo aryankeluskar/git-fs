@@ -49,16 +49,13 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
 
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* Drawer */}
       <div className="animate-slide-in-right fixed inset-y-0 right-0 z-50 w-full max-w-md border-l border-zinc-800 bg-zinc-950 shadow-2xl">
         <div className="flex h-full flex-col">
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-zinc-800/60 px-6 py-4">
             <h2 className="text-[15px] font-semibold text-zinc-100">
               Settings
@@ -78,9 +75,7 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
             </button>
           </div>
 
-          {/* Content */}
           <div className="flex-1 overflow-y-auto px-6 py-5">
-            {/* Tokens */}
             <div>
               <h3 className="mb-1 text-[12px] font-semibold uppercase tracking-widest text-zinc-500">
                 Tokens
@@ -122,7 +117,6 @@ export function SettingsPanel({ open, onClose }: SettingsPanelProps) {
             </div>
           </div>
 
-          {/* Footer */}
           <div className="border-t border-zinc-800/60 px-6 py-4">
             <button
               onClick={onClose}

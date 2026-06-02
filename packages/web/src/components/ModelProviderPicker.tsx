@@ -225,18 +225,6 @@ export function ModelProviderPicker({
                 </section>
               );
             })}
-
-            {/* <section className="mb-1 rounded-xl border border-transparent px-2 py-1.5">
-              <div className="flex min-h-10 items-center gap-2">
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-[12.5px] font-semibold text-zinc-500">Claude Pro / Max</h3>
-                  <p className="text-[10px] text-zinc-600">Direct Anthropic subscription sign-in</p>
-                </div>
-                <span className="shrink-0 rounded-full bg-zinc-800/80 px-2 py-0.5 text-[10px] font-medium text-zinc-500">
-                  coming very soon
-                </span>
-              </div>
-            </section> */}
           </div>
 
           <div className="border-t border-zinc-800/70 px-3 py-2">

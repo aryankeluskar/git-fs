@@ -108,12 +108,6 @@ export type ChatStatus =
   | "needs_auth"
   | "error";
 
-export type BootStage =
-  | "cloning"
-  | "starting_server"
-  | "checking_providers"
-  | "ready";
-
 export interface OcPart {
   type: string;
   text?: string;
@@ -139,7 +133,6 @@ export interface OcMessage {
 export interface UseAgentReturn {
   messages: OcMessage[];
   status: ChatStatus;
-  bootStage: BootStage;
   error: string | null;
   connectedProviders: string[];
   activeModel: SupportedModel;
@@ -402,7 +395,6 @@ const LOGOUT_CRED_KEY: Record<string, string> = {
 
 export function useAgent(target: AgentTarget | null): UseAgentReturn {
   const [status, setStatus] = useState<ChatStatus>("idle");
-  const [bootStage, setBootStage] = useState<BootStage>("ready");
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<OcMessage[]>([]);
   const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
@@ -511,12 +503,6 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
       const existingMessages =
         opts?.seedMessages ?? agentRef.current?.state?.messages ?? [];
 
-      console.log("[gitfs] rebuildAgent", {
-        providers,
-        picked: modelRef.current,
-        baseUrl: modelOverrides?.baseUrl,
-        carriedMessages: existingMessages.length,
-      });
       const agent = buildAgent({
         runtime,
         model: modelRef.current,
@@ -551,11 +537,6 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
 
       const existingMessages = agentRef.current?.state?.messages ?? [];
 
-      console.log("[gitfs] selectModel", {
-        picked: model,
-        baseUrl: modelOverrides?.baseUrl,
-        carriedMessages: existingMessages.length,
-      });
       const agent = buildAgent({
         runtime,
         model,
@@ -602,7 +583,6 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
       setReady(false);
       setError(null);
       setStatus("loading");
-      setBootStage("cloning");
       setMessages([]);
       sessionIdRef.current = undefined;
       setSessionId(undefined);
@@ -625,7 +605,6 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
               });
         if (cancelled) return;
         runtimeRef.current = runtime;
-        setBootStage("ready");
 
         providersRef.current = providers;
         modelRef.current = await pickModelForProviders(
@@ -789,7 +768,6 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
     () => ({
       messages,
       status,
-      bootStage,
       error,
       connectedProviders,
       activeModel,
@@ -804,7 +782,6 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
     [
       messages,
       status,
-      bootStage,
       error,
       connectedProviders,
       activeModel,

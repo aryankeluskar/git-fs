@@ -221,10 +221,7 @@ function AppHeader({ urlTarget, onOpenMobileSidebar, onOpenSettings }: AppHeader
           <AccountBreadcrumb owner={urlTarget.owner} />
         ) : (
           <div className="hidden items-center gap-2 md:flex">
-            <span className="font-display text-[12.5px] text-zinc-500">
-              {/* <span className="text-zinc-600">~/</span>
-              <span className="text-zinc-400">home</span> */}
-            </span>
+            <span className="font-display text-[12.5px] text-zinc-500" />
           </div>
         )}
       </div>
@@ -247,12 +244,6 @@ function AppHeader({ urlTarget, onOpenMobileSidebar, onOpenSettings }: AppHeader
             <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865l8.875 11.633Z" />
           </svg>
         </HeaderIconLink>
-        {/* <HeaderIconButton label="Settings" onClick={onOpenSettings}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3" />
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-          </svg>
-        </HeaderIconButton> */}
       </div>
     </header>
   );
@@ -282,27 +273,6 @@ function HeaderIconLink({
     >
       {children}
     </a>
-  );
-}
-
-function HeaderIconButton({
-  onClick,
-  label,
-  children,
-}: {
-  onClick: () => void;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className="press focus-ring grid h-10 w-10 place-items-center rounded-lg text-zinc-500 transition-[color,background-color] hover:bg-zinc-800/60 hover:text-zinc-100"
-      aria-label={label}
-      title={label}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -399,18 +369,15 @@ function HomePage() {
 
   return (
     <div className="relative flex flex-1 flex-col overflow-y-auto">
-      {/* Background decoration */}
       <div aria-hidden className="pointer-events-none absolute inset-0 hero-glow" />
       <div aria-hidden className="pointer-events-none absolute inset-0 bg-grid" />
 
       <div className="relative flex flex-1 flex-col items-center justify-start px-6 pt-16 pb-20 md:pt-[10vh]">
         <div className="stagger-hero w-full max-w-xl">
-          {/* Hero */}
           <div className="mb-10 text-center">
             <h1 className="font-display text-5xl font-bold tracking-tight text-zinc-100 leading-none sm:text-6xl md:text-7xl">
               <span className="text-emerald-400 mr-2">git</span>
               <span>fs</span>
-              {/* <span className="cursor-blink ml-1 -mb-1 bg-emerald-400 align-baseline" aria-hidden /> */}
             </h1>
             <p className="mx-auto mt-10 max-w-lg text-[14px] leading-relaxed text-zinc-400">
               Replace{" "}
@@ -425,7 +392,6 @@ function HomePage() {
             </p>
           </div>
 
-          {/* Input */}
           <RepoInput
             onSubmit={({ path }) => {
               window.location.href = path;
@@ -433,7 +399,6 @@ function HomePage() {
             disabled={false}
           />
 
-          {/* Tabs */}
           <div className="mt-10">
             <div className="mb-4 flex items-center justify-center gap-1 rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-1 mx-auto w-fit shadow-inset-hair">
               <TabButton
@@ -485,7 +450,6 @@ function HomePage() {
             )}
           </div>
 
-          {/* Footer */}
           <p className="mt-14 text-center text-[11.5px] leading-relaxed text-zinc-600">
             Powered by{" "}
             <a
