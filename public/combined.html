@@ -1,0 +1,612 @@
+<!-- DevHeroForge – GitFS Combined Promo -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitFS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Outfit', system-ui, sans-serif;
+      background: #06060a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    .banner {
+      position: relative;
+      width: 1440px;
+      height: 576px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* ── Backgrounds ── */
+    .bg-base { position: absolute; inset: 0; background: #08080e; }
+
+    .bg-mesh {
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 55% 55% at 15% 75%, rgba(16,185,129,0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 45% 50% at 85% 25%, rgba(6,182,212,0.07) 0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 50% 0%, rgba(52,211,153,0.05) 0%, transparent 60%),
+        radial-gradient(ellipse 70% 60% at 50% 100%, rgba(15,23,42,0.9) 0%, transparent 50%);
+    }
+
+    .bg-grain {
+      position: absolute; inset: 0; opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .bg-grid {
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.016) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.016) 1px, transparent 1px);
+      background-size: 60px 60px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 55%, black 20%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 55%, black 20%, transparent 70%);
+    }
+
+    /* ── Headline ── */
+    .headline-area {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding-top: 48px;
+      margin-bottom: 10px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #34d399;
+      background: rgba(52,211,153,0.06);
+      border: 1px solid rgba(52,211,153,0.16);
+      border-radius: 999px;
+      padding: 5px 14px;
+      margin-bottom: 14px;
+    }
+
+    .eyebrow .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #34d399;
+      box-shadow: 0 0 10px #34d399;
+    }
+
+    .headline {
+      font-size: 40px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+      color: #e4e4e7;
+    }
+
+    .headline .accent {
+      background: linear-gradient(135deg, #34d399 0%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      margin-top: 12px;
+      font-size: 16px;
+      font-weight: 400;
+      color: #71717a;
+      letter-spacing: -0.01em;
+    }
+
+    .subtitle em { font-style: normal; color: #a1a1aa; }
+
+    /* ── App mockup ── */
+    .mockup-wrapper {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      padding: 0 60px;
+      margin-top: 18px;
+    }
+
+    .mockup-glow {
+      position: absolute;
+      width: 900px;
+      height: 400px;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      background: radial-gradient(ellipse, rgba(16,185,129,0.06) 0%, transparent 65%);
+      pointer-events: none;
+    }
+
+    .mockup {
+      position: relative;
+      width: 1080px;
+      max-width: 100%;
+      background: #111115;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.07);
+      box-shadow:
+        0 4px 8px rgba(0,0,0,0.3),
+        0 20px 60px rgba(0,0,0,0.5),
+        0 0 0 1px rgba(255,255,255,0.02);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Title bar ── */
+    .titlebar {
+      display: flex;
+      align-items: center;
+      height: 36px;
+      padding: 0 14px;
+      background: #161619;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      gap: 8px;
+    }
+
+    .traffic-lights { display: flex; gap: 6px; }
+    .traffic-lights span { width: 10px; height: 10px; border-radius: 50%; }
+    .tl-red { background: #ff5f57; }
+    .tl-yellow { background: #febc2e; }
+    .tl-green { background: #28c840; }
+
+    .titlebar-url {
+      flex: 1;
+      text-align: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      color: #555;
+      letter-spacing: -0.01em;
+    }
+
+    .titlebar-url .url-accent { color: #34d399; }
+    .titlebar-spacer { width: 52px; }
+
+    /* ── App layout ── */
+    .app-body { display: flex; flex: 1; min-height: 0; height: 340px; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      width: 200px;
+      border-right: 1px solid rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.012);
+      flex-shrink: 0;
+    }
+
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 38px;
+      padding: 0 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+
+    .sidebar-brand {
+      font-size: 13px;
+      font-weight: 700;
+      color: #d4d4d8;
+      letter-spacing: -0.02em;
+    }
+
+    .sidebar-brand .g { color: #34d399; }
+
+    .sidebar-new-btn {
+      width: 22px; height: 22px;
+      border-radius: 5px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: grid;
+      place-items: center;
+    }
+
+    .sidebar-label {
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #3f3f46;
+      padding: 10px 14px 4px;
+    }
+
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      font-size: 12px;
+      color: #71717a;
+      margin: 1px 5px;
+      border-radius: 5px;
+    }
+
+    .sidebar-item.active {
+      background: rgba(52,211,153,0.07);
+      color: #d4d4d8;
+    }
+
+    .sidebar-icon {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      background: #1a1a1e;
+      border: 1px solid rgba(255,255,255,0.07);
+      display: grid;
+      place-items: center;
+      font-size: 9px;
+      color: #71717a;
+      flex-shrink: 0;
+    }
+
+    .sidebar-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── Main area ── */
+    .main-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+
+    .main-header {
+      display: flex;
+      align-items: center;
+      height: 38px;
+      padding: 0 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      gap: 8px;
+    }
+
+    .repo-avatar {
+      width: 18px; height: 18px;
+      border-radius: 4px;
+      background: #27272a;
+      border: 1px solid rgba(255,255,255,0.06);
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      color: #a1a1aa;
+    }
+
+    .repo-breadcrumb { font-size: 12px; color: #a1a1aa; }
+    .repo-breadcrumb .owner { color: #71717a; }
+    .repo-breadcrumb .sep { color: #3f3f46; margin: 0 1px; }
+    .repo-breadcrumb .name { color: #d4d4d8; font-weight: 600; }
+
+    .branch-pill {
+      font-size: 10px;
+      color: #52525b;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Chat ── */
+    .chat-area {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    .chat-msg { display: flex; gap: 10px; align-items: flex-start; }
+    .chat-msg.user-row { justify-content: flex-end; }
+
+    .chat-avatar {
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .chat-avatar.user {
+      background: #27272a;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #a1a1aa;
+    }
+
+    .chat-avatar.agent {
+      background: rgba(52,211,153,0.1);
+      border: 1px solid rgba(52,211,153,0.16);
+      color: #34d399;
+    }
+
+    .chat-bubble {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: #d4d4d8;
+      line-height: 1.5;
+      max-width: 82%;
+    }
+
+    .chat-bubble.from-user {
+      border-top-right-radius: 3px;
+    }
+
+    .agent-response {
+      max-width: 88%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .thinking-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 10px;
+      color: #52525b;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 5px;
+      padding: 3px 8px;
+    }
+
+    .thinking-pill .dot {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      background: #34d399;
+      opacity: 0.5;
+    }
+
+    .thinking-pill code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: rgba(52,211,153,0.5);
+    }
+
+    .code-block {
+      border-radius: 8px;
+      overflow: hidden;
+      background: #0c0c10;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      color: #52525b;
+    }
+
+    .code-body {
+      padding: 10px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      line-height: 1.6;
+      color: #a1a1aa;
+      white-space: pre;
+      overflow: hidden;
+    }
+
+    .code-body .kw { color: #c084fc; }
+    .code-body .fn { color: #34d399; }
+    .code-body .str { color: #fbbf24; }
+    .code-body .cm { color: #3f3f46; }
+    .code-body .op { color: #71717a; }
+    .code-body .type { color: #60a5fa; }
+    .code-body .prop { color: #f0abfc; }
+
+    .agent-text {
+      font-size: 12px;
+      color: #a1a1aa;
+      line-height: 1.5;
+    }
+
+    .agent-text code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10.5px;
+      background: rgba(52,211,153,0.08);
+      border: 1px solid rgba(52,211,153,0.1);
+      border-radius: 3px;
+      padding: 1px 4px;
+      color: #34d399;
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 6px; height: 13px;
+      background: #34d399;
+      border-radius: 1px;
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 49% { opacity: 0.9; }
+      50%, 100% { opacity: 0; }
+    }
+
+    .input-bar {
+      margin: 0 20px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+    }
+
+    .input-placeholder { flex: 1; font-size: 12px; color: #3f3f46; }
+
+    .send-btn {
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      background: #34d399;
+      display: grid;
+      place-items: center;
+    }
+
+    /* ── Bottom fade ── */
+    .bottom-fade {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 80px;
+      background: linear-gradient(transparent, #08080e);
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 1500px) { .banner { transform: scale(0.85); transform-origin: center center; } }
+    @media (max-width: 1200px) { .banner { transform: scale(0.7); transform-origin: center center; } }
+    @media (max-width: 900px) { .banner { transform: scale(0.5); transform-origin: center center; } }
+  </style>
+</head>
+<body>
+
+<div class="banner">
+  <div class="bg-base"></div>
+  <div class="bg-mesh"></div>
+  <div class="bg-grain"></div>
+  <div class="bg-grid"></div>
+
+  <!-- ── Headline ── -->
+  <div class="headline-area">
+    <div class="eyebrow"><span class="dot"></span>DevHeroForge</div>
+    <h1 class="headline">A custom <span class="accent">Virtual File System</span> on top of the GitHub API</h1>
+    <p class="subtitle">Agents can read, search, and reason over any repo <em>directly from your browser</em>.</p>
+  </div>
+
+  <!-- ── App mockup ── -->
+  <div class="mockup-wrapper">
+    <div class="mockup-glow"></div>
+    <div class="mockup">
+      <div class="titlebar">
+        <div class="traffic-lights">
+          <span class="tl-red"></span>
+          <span class="tl-yellow"></span>
+          <span class="tl-green"></span>
+        </div>
+        <div class="titlebar-url">
+          <span class="url-accent">github.soy.run</span>/vercel/next.js
+        </div>
+        <div class="titlebar-spacer"></div>
+      </div>
+
+      <div class="app-body">
+        <!-- Sidebar -->
+        <div class="sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-brand"><span class="g">git</span> fs</div>
+            <div class="sidebar-new-btn">
+              <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="#71717a" stroke-width="1.8" stroke-linecap="round"><path d="M8 3v10M3 8h10"/></svg>
+            </div>
+          </div>
+          <div class="sidebar-label">Sessions</div>
+          <div class="sidebar-item active">
+            <div class="sidebar-icon">▲</div>
+            <div class="sidebar-text">vercel/next.js</div>
+          </div>
+          <div class="sidebar-item">
+            <div class="sidebar-icon">D</div>
+            <div class="sidebar-text">denoland/deno</div>
+          </div>
+          <div class="sidebar-item">
+            <div class="sidebar-icon">E</div>
+            <div class="sidebar-text">expressjs/express</div>
+          </div>
+        </div>
+
+        <!-- Main -->
+        <div class="main-area">
+          <div class="main-header">
+            <div class="repo-avatar">▲</div>
+            <div class="repo-breadcrumb">
+              <span class="owner">vercel</span><span class="sep">/</span><span class="name">next.js</span>
+            </div>
+            <div class="branch-pill">main</div>
+          </div>
+
+          <div class="chat-area">
+            <div class="chat-msg user-row">
+              <div class="chat-bubble from-user">How does the App Router handle parallel routes?</div>
+              <div class="chat-avatar user">A</div>
+            </div>
+
+            <div class="chat-msg">
+              <div class="chat-avatar agent">
+                <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M8 1L2 4.5V11.5L8 15L14 11.5V4.5L8 1Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="1.5" fill="currentColor" opacity="0.6"/></svg>
+              </div>
+              <div class="agent-response">
+                <div class="thinking-pill">
+                  <span class="dot"></span>
+                  Reading <code>packages/next/src/server/app-render</code>
+                </div>
+
+                <div class="code-block">
+                  <div class="code-header">
+                    <span>create-component-tree.tsx</span>
+                    <span>L142–158</span>
+                  </div>
+                  <div class="code-body"><span class="cm">// Parallel routes use @folder convention</span>
+<span class="kw">export async function</span> <span class="fn">createComponentTree</span>(<span class="prop">props</span><span class="op">:</span> <span class="type">RenderOpts</span>) {
+  <span class="kw">const</span> parallelRoutes <span class="op">=</span> layoutSegment
+    .<span class="fn">filter</span>(<span class="prop">s</span> <span class="op">=&gt;</span> <span class="prop">s</span>.<span class="fn">startsWith</span>(<span class="str">'@'</span>))
+  <span class="kw">return</span> parallelRoutes.<span class="fn">map</span>(<span class="fn">renderSlot</span>)
+}</div>
+                </div>
+
+                <div class="agent-text">
+                  Parallel routes use the <code>@folder</code> naming convention. The renderer discovers them in
+                  <code>createComponentTree</code> and renders each slot independently<span class="cursor-blink"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-bar">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3f3f46" stroke-width="1.5"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            <span class="input-placeholder">Ask about this repo...</span>
+            <div class="send-btn">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0c0c10" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-fade"></div>
+</div>
+
+</body>
+</html>

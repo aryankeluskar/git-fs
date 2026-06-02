@@ -1,18 +1,18 @@
-import { Bash, type InMemoryFs, type BashExecResult } from "just-bash/browser";
+import { Bash, type IFileSystem, type BashExecResult } from "just-bash/browser";
 import { hydrateRepoFs, type HydratedRepoFs } from "./githubFs";
 import {
-  buildAccountSkeleton,
   fetchAccountMeta,
   fetchAccountRepos,
   type AccountMeta,
   type RepoSummary,
 } from "./githubAccount";
+import { LazyAccountFs, type HydrationEvent } from "./accountFs";
 
 export type RuntimeScope = "repo" | "account";
 
 export interface RepoRuntime {
   scope: RuntimeScope;
-  fs: InMemoryFs;
+  fs: IFileSystem;
   bash: Bash;
   owner: string;
   repo: string;
@@ -72,6 +72,7 @@ export interface CreateAccountRuntimeOptions {
   owner: string;
   limit?: number;
   getToken?: () => string | undefined | Promise<string | undefined>;
+  onHydration?: (event: HydrationEvent) => void;
 }
 
 export async function createAccountRuntime(
@@ -92,7 +93,13 @@ export async function createAccountRuntime(
     token,
     fetcher,
   });
-  const { fs } = buildAccountSkeleton(meta, repos);
+  const fs = new LazyAccountFs({
+    meta,
+    repos,
+    token: opts.getToken,
+    fetcher,
+    onHydration: opts.onHydration,
+  });
   const bash = new Bash({ cwd: "/", fs });
   let cwd = "/";
 

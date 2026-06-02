@@ -1,5 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import type { OcMessage, OcPart } from "../hooks/useAgent";
 import { ToolCard } from "./ToolCard";
 import { Reasoning } from "./Reasoning";
@@ -99,7 +101,7 @@ export function ChatMessage({ message, allMessages, extraActions }: ChatMessageP
 
         {textParts.map((p, i) => (
           <div key={`text-${i}`} className="md-body">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
               {p.text || ""}
             </ReactMarkdown>
           </div>
