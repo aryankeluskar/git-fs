@@ -163,15 +163,47 @@ export async function ensureFreshCopilot(
 
 interface CopilotModelInfo {
   id: string;
+  name?: string;
   model_picker_enabled?: boolean;
   policy?: { state?: string };
   supported_endpoints?: string[];
+  capabilities?: {
+    type?: string;
+    family?: string;
+    limits?: {
+      max_context_window_tokens?: number;
+      max_output_tokens?: number;
+    };
+  };
+}
+
+/** A chat model the user's Copilot plan can actually call. */
+export interface CopilotChatModel {
+  id: string;
+  name: string;
+  /** Model family (e.g. "gpt-5.4-mini" for "gpt-5.4-mini-free-auto"). */
+  family?: string;
+  contextWindow?: number;
+  maxTokens?: number;
+}
+
+/**
+ * A model is usable when its per-model policy is enabled. Entries without a
+ * policy are internal agent models (search/exec) unless explicitly
+ * picker-enabled. Disabled policies mean the user never turned the model on
+ * in their GitHub Copilot settings — calling those returns
+ * model_not_supported.
+ */
+function isUsableChatModel(m: CopilotModelInfo): boolean {
+  if (m.capabilities?.type !== "chat") return false;
+  if (m.policy) return m.policy.state === "enabled";
+  return m.model_picker_enabled === true;
 }
 
 export async function listCopilotModels(
   access: string,
   enterpriseDomain?: string
-): Promise<string[]> {
+): Promise<CopilotChatModel[]> {
   const base = getCopilotBaseUrl(access, enterpriseDomain);
   const res = await fetch(`${base}/models`, {
     headers: {
@@ -182,13 +214,13 @@ export async function listCopilotModels(
   if (!res.ok) return [];
   const data = (await res.json()) as { data?: CopilotModelInfo[] };
   if (!Array.isArray(data.data)) return [];
-  return data.data
-    .filter(
-      (m) =>
-        m.model_picker_enabled === true &&
-        (m.policy?.state ?? "enabled") === "enabled"
-    )
-    .map((m) => m.id);
+  return data.data.filter(isUsableChatModel).map((m) => ({
+    id: m.id,
+    name: m.name ?? m.id,
+    family: m.capabilities?.family,
+    contextWindow: m.capabilities?.limits?.max_context_window_tokens,
+    maxTokens: m.capabilities?.limits?.max_output_tokens,
+  }));
 }
 
 export function getCopilotBaseUrl(

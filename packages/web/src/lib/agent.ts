@@ -5,11 +5,13 @@ import {
 } from "@mariozechner/pi-agent-core";
 import {
   getModel,
+  getModels,
   registerBuiltInApiProviders,
   streamSimple,
   type Message,
   type Model,
 } from "@mariozechner/pi-ai";
+import type { CopilotChatModel } from "./copilotOAuth";
 import type { RepoRuntime } from "./repoRuntime";
 import { createRepoTools } from "./tools";
 
@@ -68,6 +70,57 @@ export const CODEX_MODEL_PRIORITY: string[] = [
 
 export const DEFAULT_MODEL: SupportedModel = SUPPORTED_MODELS[0];
 
+/**
+ * Runtime Model definitions for Copilot ids outside the static registry
+ * (e.g. "gpt-5.4-mini-free-auto"), synthesized from a registry template
+ * matched by id or family. resolveModel consults this before the registry.
+ */
+const dynamicCopilotModels = new Map<string, Model<any>>();
+
+/**
+ * Build picker options for Copilot from the models the user's plan actually
+ * offers (fetched at chat time). Each option needs a registry template
+ * (matched by exact id, else by family) so we know how to call it; templates
+ * carry the API shape, headers, and base URL, while id, name, and limits come
+ * from the live catalog. Priority models come first, the rest alphabetically.
+ */
+export function copilotModelOptions(
+  available: CopilotChatModel[]
+): SupportedModel[] {
+  ensureBuiltins();
+  const registry = getModels("github-copilot" as never) as Model<any>[];
+  const byId = new Map(registry.map((m) => [m.id, m]));
+
+  const options: SupportedModel[] = [];
+  for (const info of available) {
+    const template =
+      byId.get(info.id) ?? (info.family ? byId.get(info.family) : undefined);
+    if (!template) continue;
+    if (!byId.has(info.id)) {
+      dynamicCopilotModels.set(info.id, {
+        ...template,
+        id: info.id,
+        name: info.name,
+        contextWindow: info.contextWindow ?? template.contextWindow,
+        maxTokens: info.maxTokens ?? template.maxTokens,
+      });
+    }
+    options.push({
+      provider: "github-copilot",
+      modelId: info.id,
+      label: `Copilot · ${info.name}`,
+    });
+  }
+
+  const rank = (m: SupportedModel) => {
+    const i = COPILOT_MODEL_PRIORITY.indexOf(m.modelId);
+    return i === -1 ? COPILOT_MODEL_PRIORITY.length : i;
+  };
+  return options.sort(
+    (a, b) => rank(a) - rank(b) || a.label.localeCompare(b.label)
+  );
+}
+
 const FORBIDDEN_BROWSER_HEADERS = new Set([
   "user-agent",
   "editor-version",
@@ -95,7 +148,11 @@ export function resolveModel(
   overrides?: { baseUrl?: string }
 ): Model<any> {
   ensureBuiltins();
-  const model = getModel(selection.provider as never, selection.modelId as never);
+  const model =
+    (selection.provider === "github-copilot"
+      ? dynamicCopilotModels.get(selection.modelId)
+      : undefined) ??
+    getModel(selection.provider as never, selection.modelId as never);
   const sanitized = {
     ...model,
     headers: sanitizeHeaders((model as { headers?: Record<string, string> }).headers),

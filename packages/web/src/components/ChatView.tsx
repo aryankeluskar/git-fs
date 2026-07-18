@@ -36,6 +36,7 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
     refreshProviders,
     ready,
     activeModel,
+    copilotModels,
     selectModel,
     logoutProvider,
     connectedProviders,
@@ -145,6 +146,7 @@ export function ChatView({ agent, repoLabel }: ChatViewProps) {
           <ModelProviderPicker
             activeModel={activeModel}
             connectedProviders={connectedProviders}
+            copilotModels={copilotModels}
             onSelectModel={selectModel}
             onLogout={logoutProvider}
             onAuthSuccess={refreshProviders}

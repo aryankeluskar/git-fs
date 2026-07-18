@@ -9,8 +9,8 @@ import type {
 import {
   ANTHROPIC_MODEL_PRIORITY,
   buildAgent,
-  COPILOT_MODEL_PRIORITY,
   CODEX_MODEL_PRIORITY,
+  copilotModelOptions,
   DEFAULT_MODEL,
   SUPPORTED_MODELS,
   type SupportedModel,
@@ -137,6 +137,8 @@ export interface UseAgentReturn {
   error: string | null;
   connectedProviders: string[];
   activeModel: SupportedModel;
+  /** Copilot models the plan actually offers; null until known (static fallback). */
+  copilotModels: SupportedModel[] | null;
   selectModel: (model: SupportedModel) => Promise<void>;
   logoutProvider: (provider: SupportedModel["provider"]) => Promise<void>;
   sendMessage: (text: string) => Promise<void>;
@@ -299,36 +301,37 @@ function bestProvider(providers: string[]): string | undefined {
   )[0];
 }
 
-let copilotAvailableCache: { token: string; ids: Set<string> } | null = null;
+let copilotOptionsCache: { token: string; options: SupportedModel[] } | null =
+  null;
 
-async function getCopilotAvailableModels(): Promise<Set<string>> {
+/**
+ * Fetch the Copilot models this account can actually use (at chat time) and
+ * intersect with the registry. Returns null when the list can't be determined
+ * (no creds, fetch failure) so callers fall back to the static catalog.
+ */
+async function getCopilotModelOptions(): Promise<SupportedModel[] | null> {
   const creds = await getCopilotCreds();
-  if (!creds) return new Set();
+  if (!creds) return null;
   const fresh = await ensureFreshCopilot(creds);
   if (fresh.access !== creds.access) await saveCopilotCreds(fresh);
-  if (copilotAvailableCache && copilotAvailableCache.token === fresh.access) {
-    return copilotAvailableCache.ids;
+  if (copilotOptionsCache && copilotOptionsCache.token === fresh.access) {
+    return copilotOptionsCache.options;
   }
   try {
-    const ids = await listCopilotModels(fresh.access, fresh.enterpriseUrl);
-    const set = new Set(ids);
-    copilotAvailableCache = { token: fresh.access, ids: set };
-    return set;
+    const models = await listCopilotModels(fresh.access, fresh.enterpriseUrl);
+    if (models.length === 0) return null;
+    const options = copilotModelOptions(models);
+    if (options.length === 0) return null;
+    copilotOptionsCache = { token: fresh.access, options };
+    return options;
   } catch {
-    return new Set();
+    return null;
   }
 }
 
 async function pickCopilotModel(): Promise<SupportedModel | undefined> {
-  const available = await getCopilotAvailableModels();
-  for (const id of COPILOT_MODEL_PRIORITY) {
-    if (!available.has(id)) continue;
-    const match = SUPPORTED_MODELS.find(
-      (m) => m.provider === "github-copilot" && m.modelId === id
-    );
-    if (match) return match;
-  }
-  return undefined;
+  const options = await getCopilotModelOptions();
+  return options?.[0];
 }
 
 async function pickModelForProviders(
@@ -339,10 +342,13 @@ async function pickModelForProviders(
 
   if (providers.includes(currentModel.provider)) {
     if (currentModel.provider === "github-copilot") {
-      const available = await getCopilotAvailableModels();
-      if (available.has(currentModel.modelId)) return currentModel;
-      const picked = await pickCopilotModel();
-      if (picked) return picked;
+      const options = await getCopilotModelOptions();
+      if (options) {
+        const current = options.find((m) => m.modelId === currentModel.modelId);
+        // Never keep a model the plan doesn't offer: that guarantees a
+        // model_not_supported error on the next send.
+        return current ?? options[0];
+      }
     }
     return currentModel;
   }
@@ -400,6 +406,9 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
   const [messages, setMessages] = useState<OcMessage[]>([]);
   const [connectedProviders, setConnectedProviders] = useState<string[]>([]);
   const [activeModel, setActiveModel] = useState<SupportedModel>(DEFAULT_MODEL);
+  const [copilotModels, setCopilotModels] = useState<SupportedModel[] | null>(
+    null
+  );
   const [ready, setReady] = useState(false);
   const [sessionId, setSessionId] = useState<number | undefined>();
 
@@ -417,6 +426,13 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
     const list = await checkConnectedProviders();
     providersRef.current = list;
     setConnectedProviders(list);
+    if (list.includes("github-copilot")) {
+      getCopilotModelOptions()
+        .then(setCopilotModels)
+        .catch(() => setCopilotModels(null));
+    } else {
+      setCopilotModels(null);
+    }
     return list;
   }, []);
 
@@ -471,6 +487,16 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
           void persistNow();
         }
         if (ev.type === "agent_end") {
+          // Errored assistant turns have empty content and would otherwise
+          // render as nothing — surface the failure instead.
+          const failed = [...agent.state.messages]
+            .reverse()
+            .find((m) => m.role === "assistant") as
+            | (AssistantMessage & { errorMessage?: string })
+            | undefined;
+          if (failed?.stopReason === "error" && failed.errorMessage) {
+            setError(failed.errorMessage);
+          }
           setStatus(providersRef.current.length === 0 ? "needs_auth" : "idle");
         }
       });
@@ -525,6 +551,12 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
       if (!runtime || !ready) return;
       const providers = await syncProviders();
       if (!providers.includes(model.provider)) return;
+      if (model.provider === "github-copilot") {
+        const options = await getCopilotModelOptions();
+        if (options && !options.some((m) => m.modelId === model.modelId)) {
+          return;
+        }
+      }
       modelRef.current = model;
       setActiveModel(model);
 
@@ -555,7 +587,7 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
     async (provider: SupportedModel["provider"]) => {
       const credKey = LOGOUT_CRED_KEY[provider];
       if (credKey) await deleteCredential(credKey);
-      if (provider === "github-copilot") copilotAvailableCache = null;
+      if (provider === "github-copilot") copilotOptionsCache = null;
       const list = await syncProviders();
       if (runtimeRef.current) {
         await rebuildAgent();
@@ -772,6 +804,7 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
       error,
       connectedProviders,
       activeModel,
+      copilotModels,
       selectModel,
       logoutProvider,
       sendMessage,
@@ -786,6 +819,7 @@ export function useAgent(target: AgentTarget | null): UseAgentReturn {
       error,
       connectedProviders,
       activeModel,
+      copilotModels,
       selectModel,
       logoutProvider,
       sendMessage,

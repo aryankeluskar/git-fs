@@ -15,13 +15,21 @@ const PROVIDER_TITLE: Record<ProviderId, string> = {
   anthropic: "Claude · Pro / Max",
 };
 
-function modelsForProvider(p: ProviderId): SupportedModel[] {
+function modelsForProvider(
+  p: ProviderId,
+  copilotModels: SupportedModel[] | null
+): SupportedModel[] {
+  if (p === "github-copilot" && copilotModels && copilotModels.length > 0) {
+    return copilotModels;
+  }
   return SUPPORTED_MODELS.filter((m) => m.provider === p);
 }
 
 interface ModelProviderPickerProps {
   activeModel: SupportedModel;
   connectedProviders: string[];
+  /** Live Copilot model list; null falls back to the static catalog. */
+  copilotModels?: SupportedModel[] | null;
   onSelectModel: (model: SupportedModel) => void | Promise<void>;
   onLogout: (provider: ProviderId) => void | Promise<void>;
   onAuthSuccess: () => void | Promise<void>;
@@ -33,6 +41,7 @@ type AuthPanel = null | "copilot" | "codex" | "claude";
 export function ModelProviderPicker({
   activeModel,
   connectedProviders,
+  copilotModels = null,
   onSelectModel,
   onLogout,
   onAuthSuccess,
@@ -140,7 +149,7 @@ export function ModelProviderPicker({
             {SUBSCRIPTION_PROVIDERS.map((provider) => {
               const title = PROVIDER_TITLE[provider];
               const isConnected = connected.has(provider);
-              const models = modelsForProvider(provider);
+              const models = modelsForProvider(provider, copilotModels);
 
               return (
                 <section
