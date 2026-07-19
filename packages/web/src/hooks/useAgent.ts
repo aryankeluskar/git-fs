@@ -184,7 +184,7 @@ async function resolveApiKey(provider: string): Promise<string | undefined> {
   return undefined;
 }
 
-function messagesToParts(messages: Message[]): OcMessage[] {
+export function messagesToParts(messages: Message[]): OcMessage[] {
   const out: OcMessage[] = [];
   const toolResults = new Map<string, ToolResultMessage>();
   for (const m of messages) {
@@ -262,7 +262,7 @@ function messagesToParts(messages: Message[]): OcMessage[] {
   return out;
 }
 
-function filterLlmMessages(messages: AgentMessage[]): Message[] {
+export function filterLlmMessages(messages: AgentMessage[]): Message[] {
   return messages.filter(
     (m): m is Message =>
       m.role === "user" || m.role === "assistant" || m.role === "toolResult"

@@ -8,9 +8,10 @@ import { SettingsPanel } from "./components/SettingsPanel";
 import { Marquee } from "./components/Marquee";
 import { GithubRepoCard } from "./components/GithubRepoCard";
 import { useAgent } from "./hooks/useAgent";
-import { extractTargetFromPath } from "./lib/urlTarget";
+import { extractTargetFromPath, getSessionIdFromUrl } from "./lib/urlTarget";
 import { hasGithubAuth } from "./lib/githubAuth";
 import { GithubAuthGate } from "./components/AuthPrompt";
+import { ReadOnlySessionView } from "./components/ReadOnlySessionView";
 import { db } from "./db";
 
 interface SuggestedRepo {
@@ -40,6 +41,7 @@ export default function App() {
     () => extractTargetFromPath(window.location.pathname),
     []
   );
+  const urlSessionId = useMemo(() => getSessionIdFromUrl(), []);
 
   const agentTarget = useMemo(() => {
     if (!urlTarget) return null;
@@ -166,12 +168,22 @@ export default function App() {
         <div className="flex min-h-0 flex-1">
           {urlTarget ? (
             githubAuthed === false ? (
-              <GithubAuthGate
-                repoLabel={repoLabel}
-                onAuthenticated={async () => {
-                  setGithubAuthed(await hasGithubAuth());
-                }}
-              />
+              urlSessionId !== undefined ? (
+                <ReadOnlySessionView
+                  sessionId={urlSessionId}
+                  repoLabel={repoLabel}
+                  onAuthenticated={async () => {
+                    setGithubAuthed(await hasGithubAuth());
+                  }}
+                />
+              ) : (
+                <GithubAuthGate
+                  repoLabel={repoLabel}
+                  onAuthenticated={async () => {
+                    setGithubAuthed(await hasGithubAuth());
+                  }}
+                />
+              )
             ) : githubAuthed === true ? (
               <ChatView agent={agent} repoLabel={repoLabel} />
             ) : (

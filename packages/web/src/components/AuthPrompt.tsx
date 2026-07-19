@@ -487,7 +487,7 @@ interface GithubSignInProps {
  * escape the 60 req/hr unauthenticated rate limit. The same token is later
  * reused by the Copilot flow, so users only OAuth once.
  */
-function GithubSignIn({
+export function GithubSignIn({
   onAuthenticated,
   autoStart = false,
 }: GithubSignInProps) {
