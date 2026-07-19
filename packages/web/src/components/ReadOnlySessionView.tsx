@@ -80,9 +80,9 @@ export function ReadOnlySessionView({
         <div className="mx-auto w-full max-w-xl animate-fade-in">
           <p className="mb-3 text-center text-[12.5px] leading-relaxed text-zinc-500">
             This is an example conversation. Connect GitHub to continue it or
-            explore{" "}
+            chat with {" "}
             <span className="font-mono text-zinc-400">{repoLabel}</span>{" "}
-            yourself — your token stays in this browser only (IndexedDB).
+            yourself.
           </p>
           <GithubSignIn onAuthenticated={onAuthenticated} />
         </div>
