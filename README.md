@@ -1,10 +1,12 @@
 # GitFS
 
-Replace `github.com` with `github.soy.run` on any GitHub URL and instantly chat with that repo through an AI agent. No clone, no container, no MCP.
+Replace `github.com` with `github.soy.run` on any GitHub URL and instantly chat with that repo through an AI agent.
 
-GitFS hydrates a virtual filesystem from GitHub's API and gives an agent a bash shell to explore it — `grep`, `cat`, `ls`, `find` work instantly because the filesystem is in-memory. File contents load lazily from GitHub on demand.
+GitFS hydrates a virtual filesystem from GitHub's API fakes a bash shell to explore it (`grep`, `cat`, `ls`, `find`) so you can run coding agents completely in your browser. File contents load lazily from GitHub on demand.
 
 <img alt="image" src="https://github.com/aryankeluskar/git-fs/blob/master/public/banner.png?raw=true" />
+
+<img width="1200" height="854" alt="image" src="https://github.com/user-attachments/assets/8418a284-5630-40a3-b6a5-a3ac6b69cc41" />
 
 
 ## Virtual Filesystem (primary)
@@ -17,7 +19,9 @@ Browser
         └── pi-ai (model streaming: Copilot / Codex / Claude)
 ```
 
-The agent runs in the browser. The Worker never touches user tokens — it just forwards API requests with the right headers so OAuth subscription tokens (Copilot, Codex, Claude) work from a browser context.
+The agent runs in the browser. The Worker never touches user tokens — it just forwards API requests with the right headers so OAuth subscription tokens (Copilot, Codex, Claude Code) work from a browser context.
+
+<img width="1200" height="771" alt="image" src="https://github.com/user-attachments/assets/dc0f979e-6907-46b6-a034-3cfc07f556f0" />
 
 ## Account-Level Queries
 
